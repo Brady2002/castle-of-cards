@@ -273,6 +273,44 @@ body {
   50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.5), 2px 3px 8px rgba(0, 0, 0, 0.1); }
 }
 
+/* === Intent Tooltip === */
+.intent-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.intent-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.intent-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1e293b;
+}
+
+.intent-wrapper:hover .intent-tooltip {
+  display: block;
+}
+
 /* === Intent Badges === */
 .intent-badge {
   display: flex;

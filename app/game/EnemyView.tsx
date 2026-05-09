@@ -55,7 +55,10 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
 
       {/* Intent */}
       <div className="flex justify-center">
-        <IntentBadge intent={enemy.intent} strength={enemy.status.strength} />
+        <div className="intent-wrapper">
+          <IntentBadge intent={enemy.intent} strength={enemy.status.strength} />
+          <div className="intent-tooltip">{describeIntent(enemy.intent, enemy.status.strength)}</div>
+        </div>
       </div>
 
       {/* Status Effects */}
@@ -136,6 +139,31 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
           <span>{intent.amount}</span>
         </div>
       )
+  }
+}
+
+function describeIntent(intent: EnemyInstance['intent'], strength: number): string {
+  switch (intent.type) {
+    case 'attack': {
+      const dmg = intent.damage + strength
+      return `Deals ${dmg} damage`
+    }
+    case 'multi_attack': {
+      const dmg = intent.damage + strength
+      return `Deals ${dmg} damage ${intent.hits} times`
+    }
+    case 'defend':
+      return `Gains ${intent.block} Block`
+    case 'buff': {
+      const label = intent.status === 'strength' ? 'Strength' : intent.status
+      return `Gains ${intent.amount} ${label}`
+    }
+    case 'debuff': {
+      const label = intent.status === 'vulnerable' ? 'Vulnerable'
+        : intent.status === 'weak' ? 'Weak'
+        : intent.status
+      return `Applies ${intent.amount} ${label} to you`
+    }
   }
 }
 
