@@ -1,6 +1,6 @@
 'use client'
 
-import { isElite, isBoss } from './enemies'
+import type { MapNodeType } from './map'
 
 type Props = {
   encounter: number
@@ -8,13 +8,14 @@ type Props = {
   playerMaxHp: number
   sandDollars: number
   castleScore: number
+  nodeType?: MapNodeType
 }
 
-export default function CombatHeader({ encounter, playerHp, playerMaxHp, sandDollars, castleScore }: Props) {
+export default function CombatHeader({ encounter, playerHp, playerMaxHp, sandDollars, castleScore, nodeType }: Props) {
   const hpPct = (playerHp / playerMaxHp) * 100
   const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#fbbf24' : '#f87171'
-  const elite = isElite(encounter)
-  const boss = isBoss(encounter)
+  const boss = nodeType === 'boss'
+  const elite = nodeType === 'elite'
 
   return (
     <div className="w-full max-w-5xl">
@@ -26,7 +27,7 @@ export default function CombatHeader({ encounter, playerHp, playerMaxHp, sandDol
             elite ? 'bg-purple-900/60 text-purple-300' :
             'bg-amber-900/30 text-amber-300'
           }`}>
-            {boss ? 'BOSS' : elite ? 'ELITE' : `Fight ${encounter}/12`}
+            {boss ? 'BOSS' : elite ? 'ELITE' : `Floor ${Math.min(10, encounter)}`}
           </span>
         </div>
 

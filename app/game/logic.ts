@@ -7,14 +7,17 @@ import type {
   StatusEffects,
 } from './types'
 import { buildStartingDeck, generateRewardOptions, getDef, needsTarget } from './cards'
-import { spawnEnemies, pickNextIntent, getNextIntentIndex, getSandDollarReward, checkPhaseTransition } from './enemies'
+import { spawnEnemiesByNames, pickNextIntent, getNextIntentIndex, checkPhaseTransition } from './enemies'
 import { computeCastleBonuses, computeCastleScore, CASTLE_PART_DEFS, hasPrereq } from './castleParts'
+import { generateMap, getNode, markNodeVisited, getSandDollarReward } from './map'
+import type { MapNodeType } from './map'
+import { getRandomEvent, resolveEventOutcome } from './events'
+import type { EventOutcome } from './events'
 
 export const HAND_SIZE = 5
 export const STARTING_ENERGY = 3
 export const STARTING_HP = 50
 export const WIN_SCORE = 50
-export const MAX_ENCOUNTERS = 12
 export const REST_COST = 12
 export const REST_HEAL = 15
 
@@ -93,9 +96,10 @@ function tickStatuses(status: StatusEffects): StatusEffects {
 export function createGame(): GameState {
   const deck = shuffle(buildStartingDeck())
   const bonuses = emptyBonuses()
+  const map = generateMap()
 
-  return initCombat({
-    phase: 'combat_player_turn',
+  return {
+    phase: 'map',
     playerHp: STARTING_HP,
     playerMaxHp: STARTING_HP,
     playerBlock: 0,
@@ -107,7 +111,7 @@ export function createGame(): GameState {
     discard: [],
     enemies: [],
     selectedCardId: null,
-    encounter: 1,
+    encounter: 0,
     turnNumber: 1,
     sandDollars: 0,
     castle: [],
@@ -116,12 +120,17 @@ export function createGame(): GameState {
     rewardOptions: [],
     canRemoveCard: false,
     sandDollarsEarned: 0,
-  })
+    map,
+    currentNodeId: null,
+    currentEvent: null,
+    eventResult: null,
+    seenEventIds: [],
+  }
 }
 
-function initCombat(state: GameState): GameState {
+function initCombat(state: GameState, enemyNames: string[]): GameState {
   const bonuses = state.castleBonuses
-  let enemies = spawnEnemies(state.encounter)
+  let enemies = spawnEnemiesByNames(enemyNames)
 
   // Castle bonuses: Decoration → enemies start with Vulnerable
   if (bonuses.enemyStartVuln > 0) {
@@ -186,6 +195,11 @@ export type GameAction =
   | { type: 'build_part'; part: CastlePartType }
   | { type: 'rest' }
   | { type: 'continue_from_build' }
+  | { type: 'select_map_node'; nodeId: string }
+  | { type: 'pick_event_choice'; choiceIndex: number }
+  | { type: 'continue_from_event' }
+  | { type: 'event_remove_card'; cardId: string }
+  | { type: 'skip_event_remove' }
   | { type: 'restart' }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -216,6 +230,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return rest(state)
     case 'continue_from_build':
       return continueFromBuild(state)
+    case 'select_map_node':
+      return selectMapNode(state, action.nodeId)
+    case 'pick_event_choice':
+      return pickEventChoice(state, action.choiceIndex)
+    case 'continue_from_event':
+      return continueFromEvent(state)
+    case 'event_remove_card':
+      return eventRemoveCard(state, action.cardId)
+    case 'skip_event_remove':
+      return skipEventRemove(state)
     case 'restart':
       return createGame()
     default:
@@ -285,7 +309,10 @@ function playCard(state: GameState, card: CardInstance, targetId: string | undef
 
   // Check if all enemies dead
   if (newState.enemies.every(e => e.hp <= 0)) {
-    const reward = getSandDollarReward(newState.encounter)
+    const currentNode = newState.currentNodeId ? getNode(newState.map, newState.currentNodeId) : null
+    const reward = currentNode
+      ? getSandDollarReward(currentNode.difficulty, currentNode.type)
+      : 0
     return {
       ...newState,
       phase: 'combat_victory',
@@ -508,8 +535,9 @@ function resolveEnemyTurn(state: GameState): GameState {
 function continueFromVictory(state: GameState): GameState {
   if (state.phase !== 'combat_victory') return state
 
-  // Boss defeated — win/lose based on score
-  if (state.encounter >= MAX_ENCOUNTERS) {
+  // Check if this was the boss fight
+  const currentNode = state.currentNodeId ? getNode(state.map, state.currentNodeId) : null
+  if (currentNode?.type === 'boss') {
     return {
       ...state,
       phase: state.castleScore >= WIN_SCORE ? 'win' : 'lose',
@@ -517,7 +545,6 @@ function continueFromVictory(state: GameState): GameState {
   }
 
   const reward = state.sandDollarsEarned
-  const canRemove = state.encounter % 3 === 0 // encounters 3, 6, 9
   const rewardOptions = generateRewardOptions(state.encounter)
 
   return {
@@ -525,7 +552,7 @@ function continueFromVictory(state: GameState): GameState {
     phase: 'card_reward',
     sandDollars: state.sandDollars + reward,
     rewardOptions,
-    canRemoveCard: canRemove,
+    canRemoveCard: false,
   }
 }
 
@@ -536,7 +563,7 @@ function pickReward(state: GameState, cardId: string): GameState {
 
   return {
     ...state,
-    phase: 'castle_build',
+    phase: 'map',
     deck: [...state.deck, card],
     rewardOptions: [],
   }
@@ -546,7 +573,7 @@ function skipReward(state: GameState): GameState {
   if (state.phase !== 'card_reward') return state
   return {
     ...state,
-    phase: 'castle_build',
+    phase: 'map',
     rewardOptions: [],
   }
 }
@@ -607,20 +634,140 @@ function rest(state: GameState): GameState {
 
 function continueFromBuild(state: GameState): GameState {
   if (state.phase !== 'castle_build') return state
+  return { ...state, phase: 'map' }
+}
 
-  // Next encounter (boss victory is handled in continueFromVictory, not here)
-  const nextEncounter = state.encounter + 1
+// === Map Node Selection ===
 
-  // Reset for next combat: discard hand, shuffle everything
-  const allCards = [...state.deck, ...state.discard, ...state.hand]
+function selectMapNode(state: GameState, nodeId: string): GameState {
+  if (state.phase !== 'map') return state
 
-  return initCombat({
+  const node = getNode(state.map, nodeId)
+  if (!node) return state
+
+  const updatedMap = markNodeVisited(state.map, nodeId)
+  const newState: GameState = {
     ...state,
-    encounter: nextEncounter,
-    deck: shuffle(allCards),
-    discard: [],
-    hand: [],
-  })
+    map: updatedMap,
+    currentNodeId: nodeId,
+    encounter: state.encounter + 1,
+  }
+
+  switch (node.type) {
+    case 'combat':
+    case 'elite':
+    case 'boss': {
+      const enemyNames = node.enemyNames || ['Sand Crab']
+      const allCards = [...newState.deck, ...newState.discard, ...newState.hand]
+      return initCombat({
+        ...newState,
+        deck: shuffle(allCards),
+        discard: [],
+        hand: [],
+      }, enemyNames)
+    }
+
+    case 'rest': {
+      const healAmount = Math.floor(newState.playerMaxHp * 0.3)
+      return {
+        ...newState,
+        phase: 'map',
+        playerHp: Math.min(newState.playerMaxHp, newState.playerHp + healAmount),
+      }
+    }
+
+    case 'shop': {
+      return { ...newState, phase: 'castle_build' }
+    }
+
+    case 'event': {
+      const event = getRandomEvent(state.seenEventIds)
+      return {
+        ...newState,
+        phase: 'event',
+        currentEvent: event,
+        eventResult: null,
+        seenEventIds: [...state.seenEventIds, event.id],
+      }
+    }
+
+    default:
+      return newState
+  }
+}
+
+// === Event Actions ===
+
+function pickEventChoice(state: GameState, choiceIndex: number): GameState {
+  if (state.phase !== 'event' || !state.currentEvent) return state
+  const choice = state.currentEvent.choices[choiceIndex]
+  if (!choice) return state
+
+  const resolved = resolveEventOutcome(choice.outcome)
+  let newState: GameState = { ...state, eventResult: resolved, phase: 'event_result' }
+
+  // Apply outcome effects
+  if (resolved.hpChange !== undefined) {
+    if (resolved.hpChange === -1 && state.currentEvent.id === 'healing_spring') {
+      // Special: percentage heal
+      const heal = Math.floor(newState.playerMaxHp * 0.25)
+      newState = { ...newState, playerHp: Math.min(newState.playerMaxHp, newState.playerHp + heal) }
+    } else {
+      newState = {
+        ...newState,
+        playerHp: Math.max(0, Math.min(newState.playerMaxHp, newState.playerHp + resolved.hpChange)),
+      }
+    }
+  }
+
+  if (resolved.maxHpChange !== undefined) {
+    const newMax = newState.playerMaxHp + resolved.maxHpChange
+    newState = { ...newState, playerMaxHp: newMax, playerHp: Math.min(newMax, newState.playerHp + resolved.maxHpChange) }
+  }
+
+  if (resolved.sandDollarsChange !== undefined) {
+    // Check if player can afford
+    if (resolved.sandDollarsChange < 0 && newState.sandDollars < Math.abs(resolved.sandDollarsChange)) {
+      return state // Can't afford
+    }
+    newState = { ...newState, sandDollars: newState.sandDollars + resolved.sandDollarsChange }
+  }
+
+  if (resolved.removeCard) {
+    newState = { ...newState, phase: 'event_remove_card' }
+  }
+
+  // Check if player died
+  if (newState.playerHp <= 0) {
+    return { ...newState, phase: 'lose', playerHp: 0 }
+  }
+
+  return newState
+}
+
+function continueFromEvent(state: GameState): GameState {
+  if (state.phase !== 'event_result') return state
+  return {
+    ...state,
+    phase: 'map',
+    currentEvent: null,
+    eventResult: null,
+  }
+}
+
+function eventRemoveCard(state: GameState, cardId: string): GameState {
+  if (state.phase !== 'event_remove_card') return state
+  return {
+    ...state,
+    phase: 'event_result',
+    deck: state.deck.filter(c => c.id !== cardId),
+    discard: state.discard.filter(c => c.id !== cardId),
+  }
+}
+
+function skipEventRemove(state: GameState): GameState {
+  if (state.phase !== 'event_remove_card') return state
+  return { ...state, phase: 'event_result' }
 }
 
 // === Exports for UI ===

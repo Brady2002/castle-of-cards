@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import type { EnemyInstance } from './types'
 import { ENEMY_DEFS } from './enemies'
 
@@ -55,10 +56,7 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
 
       {/* Intent */}
       <div className="flex justify-center">
-        <div className="intent-wrapper">
-          <IntentBadge intent={enemy.intent} strength={enemy.status.strength} />
-          <div className="intent-tooltip">{describeIntent(enemy.intent, enemy.status.strength)}</div>
-        </div>
+        <IntentBadge intent={enemy.intent} strength={enemy.status.strength} />
       </div>
 
       {/* Status Effects */}
@@ -75,8 +73,172 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
           )}
         </div>
       )}
+
+      {/* Hover tooltip: intent + active status effects */}
+      <EnemyTooltip enemy={enemy} />
     </div>
   )
+}
+
+function EnemyTooltip({ enemy }: { enemy: EnemyInstance }) {
+  return (
+    <div className="enemy-tooltip">
+      <IntentTooltipCard intent={enemy.intent} strength={enemy.status.strength} />
+      {enemy.status.vulnerable > 0 && (
+        <TooltipCard
+          title="Vulnerable"
+          accent="vulnerable"
+          icon={<StatusIcon kind="vulnerable" />}
+          body={<>Takes <span className="tooltip-emph">50% more</span> damage from attacks. Decreases by 1 each turn. ({enemy.status.vulnerable} left)</>}
+        />
+      )}
+      {enemy.status.weak > 0 && (
+        <TooltipCard
+          title="Weak"
+          accent="weak"
+          icon={<StatusIcon kind="weak" />}
+          body={<>Deals <span className="tooltip-emph">25% less</span> attack damage. Decreases by 1 each turn. ({enemy.status.weak} left)</>}
+        />
+      )}
+      {enemy.status.strength > 0 && (
+        <TooltipCard
+          title="Strength"
+          accent="strength"
+          icon={<StatusIcon kind="strength" />}
+          body={<>Increases attack damage by <span className="tooltip-emph">{enemy.status.strength}</span>.</>}
+        />
+      )}
+    </div>
+  )
+}
+
+function IntentTooltipCard({ intent, strength }: { intent: EnemyInstance['intent']; strength: number }) {
+  switch (intent.type) {
+    case 'attack': {
+      const dmg = intent.damage + strength
+      return (
+        <TooltipCard
+          title="Attack"
+          accent="attack"
+          icon={<IntentIcon kind="attack" />}
+          body={<>Intends to attack for <span className="tooltip-emph">{dmg}</span> damage.</>}
+        />
+      )
+    }
+    case 'multi_attack': {
+      const dmg = intent.damage + strength
+      return (
+        <TooltipCard
+          title="Multi-Attack"
+          accent="attack"
+          icon={<IntentIcon kind="attack" />}
+          body={<>Intends to attack for <span className="tooltip-emph">{dmg}</span> damage <span className="tooltip-emph">{intent.hits}</span> times.</>}
+        />
+      )
+    }
+    case 'defend':
+      return (
+        <TooltipCard
+          title="Defend"
+          accent="defend"
+          icon={<IntentIcon kind="defend" />}
+          body={<>Intends to gain <span className="tooltip-emph">{intent.block}</span> Block.</>}
+        />
+      )
+    case 'buff': {
+      const label = intent.status === 'strength' ? 'Strength' : intent.status
+      return (
+        <TooltipCard
+          title="Buff"
+          accent="buff"
+          icon={<IntentIcon kind="buff" />}
+          body={<>Intends to gain <span className="tooltip-emph">{intent.amount}</span> {label}.</>}
+        />
+      )
+    }
+    case 'debuff': {
+      const label = intent.status === 'vulnerable' ? 'Vulnerable'
+        : intent.status === 'weak' ? 'Weak'
+        : intent.status
+      return (
+        <TooltipCard
+          title="Debuff"
+          accent="debuff"
+          icon={<IntentIcon kind="debuff" />}
+          body={<>Intends to apply <span className="tooltip-emph">{intent.amount}</span> {label} to you.</>}
+        />
+      )
+    }
+  }
+}
+
+type Accent = 'attack' | 'defend' | 'buff' | 'debuff' | 'vulnerable' | 'weak' | 'strength'
+
+function TooltipCard({ title, accent, icon, body }: { title: string; accent: Accent; icon: ReactNode; body: ReactNode }) {
+  return (
+    <div className="tooltip-card">
+      <div className={`tooltip-card-title tooltip-accent-${accent}`}>
+        {icon}
+        <span>{title}</span>
+      </div>
+      <div className="tooltip-card-body">{body}</div>
+    </div>
+  )
+}
+
+function IntentIcon({ kind }: { kind: 'attack' | 'defend' | 'buff' | 'debuff' }) {
+  switch (kind) {
+    case 'attack':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#fca5a5" />
+        </svg>
+      )
+    case 'defend':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M8 1 L14 4 L14 10 L8 15 L2 10 L2 4 Z" fill="#93c5fd" />
+        </svg>
+      )
+    case 'buff':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M8 2 L10 6 L14 7 L11 10 L12 14 L8 12 L4 14 L5 10 L2 7 L6 6 Z" fill="#fcd34d" />
+        </svg>
+      )
+    case 'debuff':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="6" fill="none" stroke="#c4b5fd" strokeWidth="2" />
+          <path d="M5 5 L11 11 M11 5 L5 11" stroke="#c4b5fd" strokeWidth="1.5" />
+        </svg>
+      )
+  }
+}
+
+function StatusIcon({ kind }: { kind: 'vulnerable' | 'weak' | 'strength' }) {
+  switch (kind) {
+    case 'vulnerable':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M8 2 L14 13 L2 13 Z" fill="none" stroke="#fbbf24" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M8 6 L8 10 M8 11.5 L8 12" stroke="#fbbf24" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      )
+    case 'weak':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M3 8 Q5 4 8 8 Q11 12 13 8" fill="none" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M2 12 L14 12" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
+        </svg>
+      )
+    case 'strength':
+      return (
+        <svg width="12" height="12" viewBox="0 0 16 16">
+          <path d="M3 6 L6 6 L6 3 L10 3 L10 6 L13 6 L13 10 L10 10 L10 13 L6 13 L6 10 L3 10 Z" fill="#fca5a5" />
+        </svg>
+      )
+  }
 }
 
 function StatusBadge({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
@@ -139,31 +301,6 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
           <span>{intent.amount}</span>
         </div>
       )
-  }
-}
-
-function describeIntent(intent: EnemyInstance['intent'], strength: number): string {
-  switch (intent.type) {
-    case 'attack': {
-      const dmg = intent.damage + strength
-      return `Deals ${dmg} damage`
-    }
-    case 'multi_attack': {
-      const dmg = intent.damage + strength
-      return `Deals ${dmg} damage ${intent.hits} times`
-    }
-    case 'defend':
-      return `Gains ${intent.block} Block`
-    case 'buff': {
-      const label = intent.status === 'strength' ? 'Strength' : intent.status
-      return `Gains ${intent.amount} ${label}`
-    }
-    case 'debuff': {
-      const label = intent.status === 'vulnerable' ? 'Vulnerable'
-        : intent.status === 'weak' ? 'Weak'
-        : intent.status
-      return `Applies ${intent.amount} ${label} to you`
-    }
   }
 }
 

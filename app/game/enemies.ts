@@ -179,6 +179,10 @@ function randRange(min: number, max: number): number {
 
 export function spawnEnemies(encounter: number): EnemyInstance[] {
   const names = ENCOUNTER_TABLE[encounter - 1] || ENCOUNTER_TABLE[0]
+  return spawnEnemiesByNames(names)
+}
+
+export function spawnEnemiesByNames(names: string[]): EnemyInstance[] {
   return names.map(name => {
     const def = ENEMY_DEFS[name]
     const hp = randRange(def.hpRange[0], def.hpRange[1])

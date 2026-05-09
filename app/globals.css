@@ -273,42 +273,63 @@ body {
   50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.5), 2px 3px 8px rgba(0, 0, 0, 0.1); }
 }
 
-/* === Intent Tooltip === */
-.intent-wrapper {
-  position: relative;
-  display: inline-flex;
-}
-
-.intent-tooltip {
-  display: none;
+/* === Enemy Tooltip Stack === */
+.enemy-tooltip {
   position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  background: #1e293b;
-  color: #f1f5f9;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  top: 0;
+  left: calc(100% + 10px);
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   pointer-events: none;
-  z-index: 20;
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
 }
 
-.intent-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: #1e293b;
+.enemy-card:hover .enemy-tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
-.intent-wrapper:hover .intent-tooltip {
-  display: block;
+.tooltip-card {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 6px 9px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  text-align: left;
+}
+
+.tooltip-card-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.tooltip-card-body {
+  font-size: 11px;
+  font-weight: 500;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+
+.tooltip-accent-attack { color: #fca5a5; }
+.tooltip-accent-defend { color: #93c5fd; }
+.tooltip-accent-buff { color: #fcd34d; }
+.tooltip-accent-debuff { color: #c4b5fd; }
+.tooltip-accent-vulnerable { color: #fbbf24; }
+.tooltip-accent-weak { color: #c4b5fd; }
+.tooltip-accent-strength { color: #fca5a5; }
+
+.tooltip-emph {
+  color: #fef3c7;
+  font-weight: 700;
 }
 
 /* === Intent Badges === */

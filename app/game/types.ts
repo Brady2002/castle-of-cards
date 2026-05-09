@@ -82,12 +82,16 @@ export type CastlePartDef = {
 
 // === Game State ===
 export type Phase =
+  | 'map'
   | 'combat_player_turn'
   | 'targeting'
   | 'combat_enemy_turn'
   | 'combat_victory'
   | 'card_reward'
   | 'castle_build'
+  | 'event'
+  | 'event_result'
+  | 'event_remove_card'
   | 'win'
   | 'lose'
 
@@ -135,4 +139,13 @@ export type GameState = {
   rewardOptions: CardInstance[]
   canRemoveCard: boolean
   sandDollarsEarned: number
+
+  // Map
+  map: import('./map').GameMap
+  currentNodeId: string | null
+
+  // Events
+  currentEvent: import('./events').GameEvent | null
+  eventResult: import('./events').EventOutcome | null
+  seenEventIds: string[]
 }

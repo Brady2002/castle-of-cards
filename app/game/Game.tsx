@@ -11,6 +11,8 @@ import VictoryModal from './VictoryModal'
 import RewardModal from './RewardModal'
 import CastleBuildScreen from './CastleBuildScreen'
 import GameOverScreen from './GameOverScreen'
+import MapScreen from './MapScreen'
+import EventScreen from './EventScreen'
 
 export default function Game() {
   const [state, dispatch] = useReducer(gameReducer, null as unknown as GameState)
@@ -39,6 +41,14 @@ export default function Game() {
     return <GameOverScreen state={state} dispatch={dispatch} />
   }
 
+  if (state.phase === 'map') {
+    return <MapScreen state={state} dispatch={dispatch} />
+  }
+
+  if (state.phase === 'event' || state.phase === 'event_result' || state.phase === 'event_remove_card') {
+    return <EventScreen state={state} dispatch={dispatch} />
+  }
+
   if (state.phase === 'castle_build') {
     return <CastleBuildScreen state={state} dispatch={dispatch} />
   }
@@ -56,6 +66,7 @@ export default function Game() {
         playerMaxHp={state.playerMaxHp}
         sandDollars={state.sandDollars}
         castleScore={state.castleScore}
+        nodeType={state.currentNodeId ? state.map.nodes.find(n => n.id === state.currentNodeId)?.type : undefined}
       />
 
       {/* Enemy area */}

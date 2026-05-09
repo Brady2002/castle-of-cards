@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cd:*)",
-      "WebFetch(domain:slaythespire.wiki.gg)"
+      "WebFetch(domain:slaythespire.wiki.gg)",
+      "WebFetch(domain:slay-the-spire.fandom.com)"
     ]
   }
 }

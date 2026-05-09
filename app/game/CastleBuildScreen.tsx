@@ -86,7 +86,7 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
             className="btn-primary w-full text-center text-lg py-3"
             onClick={() => dispatch({ type: 'continue_from_build' })}
           >
-            Continue to Fight {state.encounter + 1}
+            Back to Map
           </button>
         </div>
       </div>
