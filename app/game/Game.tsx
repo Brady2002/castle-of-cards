@@ -2,8 +2,8 @@
 
 import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { gameReducer, canPlayCard } from './logic'
-import { getCardTargetMode, type CardTargetMode } from './cards'
-import type { GameState } from './types'
+import { getCardTargetMode, getDef, type CardTargetMode } from './cards'
+import type { CardInstance, GameState } from './types'
 import Hand from './Hand'
 import CombatHeader from './CombatHeader'
 import EnemyView from './EnemyView'
@@ -21,6 +21,22 @@ type Peek = null | 'draw' | 'discard' | 'map'
 
 // CSS lift amount for a dragged card. Must match `.game-card.dragging` in globals.css.
 const CARD_LIFT = 220
+
+function playSfx(src: string, volume = 0.7) {
+  try {
+    const a = new Audio(src)
+    a.volume = volume
+    void a.play().catch(() => {})
+  } catch {}
+}
+
+function playCardSfx(card: CardInstance) {
+  const def = getDef(card)
+  const hasAttack = def.effects.some(e => e.kind === 'damage' || e.kind === 'multi_hit' || e.kind === 'damage_eq_block')
+  const hasBlock = def.effects.some(e => e.kind === 'block')
+  if (hasAttack) playSfx('/audio/throw.wav')
+  if (hasBlock) playSfx('/audio/sand.wav')
+}
 
 // Drag state: where the dragged card is anchored, where the cursor is now,
 // and which target (if any) is currently being aimed at.
@@ -65,6 +81,28 @@ export default function Game() {
     }, 800)
     return () => clearTimeout(timer)
   }, [state?.phase])
+
+  // Ambient waves — loop forever at low volume, started on first user interaction
+  // (autoplay-blocked browsers won't let it start before then).
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null)
+  useEffect(() => {
+    const a = new Audio('/audio/waves.wav')
+    a.loop = true
+    a.volume = 0.06
+    ambientAudioRef.current = a
+    const tryPlay = () => { void a.play().catch(() => {}) }
+    tryPlay()
+    // Retry on first interaction in case autoplay was blocked
+    const onInteract = () => { tryPlay() }
+    window.addEventListener('pointerdown', onInteract, { once: true })
+    window.addEventListener('keydown', onInteract, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', onInteract)
+      window.removeEventListener('keydown', onInteract)
+      a.pause()
+      ambientAudioRef.current = null
+    }
+  }, [])
 
   // Combat music — loop LowTide while in active combat, fade out when leaving.
   // Browsers block autoplay until a user interaction; the first play() may reject
@@ -166,9 +204,13 @@ export default function Game() {
       if (card && canPlayCard(s, card)) {
         if (d.mode === 'enemy_single') {
           const id = findEnemyAt(e.clientX, e.clientY)
-          if (id) dispatch({ type: 'play_card', cardId: d.cardId, targetId: id })
+          if (id) {
+            playCardSfx(card)
+            dispatch({ type: 'play_card', cardId: d.cardId, targetId: id })
+          }
         } else if (e.clientY < d.handTopY) {
           // AOE / self: any release above the hand plays the card.
+          playCardSfx(card)
           dispatch({ type: 'play_card', cardId: d.cardId })
         }
       }
