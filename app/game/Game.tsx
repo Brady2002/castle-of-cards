@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useReducer, useState, type CSSProperties } from 'react'
-import { gameReducer } from './logic'
+import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { gameReducer, canPlayCard } from './logic'
+import { getCardTargetMode, type CardTargetMode } from './cards'
 import type { GameState } from './types'
 import Hand from './Hand'
 import CombatHeader from './CombatHeader'
@@ -18,10 +19,38 @@ import MapPeekModal from './MapPeekModal'
 
 type Peek = null | 'draw' | 'discard' | 'map'
 
+// CSS lift amount for a dragged card. Must match `.game-card.dragging` in globals.css.
+const CARD_LIFT = 220
+
+// Drag state: where the dragged card is anchored, where the cursor is now,
+// and which target (if any) is currently being aimed at.
+type DragState = {
+  cardId: string
+  cardCenterX: number  // visual center of the dragged card after lifting
+  cardCenterY: number
+  mouseX: number
+  mouseY: number
+  mode: CardTargetMode
+  hoveredEnemyId: string | null
+  handTopY: number
+}
+
 export default function Game() {
   const [state, dispatch] = useReducer(gameReducer, null as unknown as GameState)
   const [initialized, setInitialized] = useState(false)
   const [peek, setPeek] = useState<Peek>(null)
+
+  // Drag state lives in useState (for re-renders) AND a ref (so global mouse
+  // listeners can read the latest value without re-attaching every frame).
+  const [drag, setDrag] = useState<DragState | null>(null)
+  const dragRef = useRef<DragState | null>(null)
+  const stateRef = useRef<GameState | null>(null)
+  stateRef.current = state
+
+  function updateDrag(next: DragState | null) {
+    dragRef.current = next
+    setDrag(next)
+  }
 
   useEffect(() => {
     dispatch({ type: 'restart' })
@@ -36,6 +65,98 @@ export default function Game() {
     }, 800)
     return () => clearTimeout(timer)
   }, [state?.phase])
+
+  // Cancel an active drag if the player's turn ends out from under us
+  // (enemy turn, victory, etc.) — otherwise the arrow would linger.
+  useEffect(() => {
+    if (!drag) return
+    if (state?.phase !== 'combat_player_turn' && state?.phase !== 'targeting') {
+      updateDrag(null)
+    }
+  }, [state?.phase, drag])
+
+  // Global mouse listeners — attached once, read live state via refs.
+  useEffect(() => {
+    function findEnemyAt(x: number, y: number): string | null {
+      const els = document.elementsFromPoint(x, y)
+      for (const el of els) {
+        const id = (el as HTMLElement).getAttribute?.('data-enemy-id')
+        if (id) return id
+      }
+      return null
+    }
+
+    function onMove(e: MouseEvent) {
+      const d = dragRef.current
+      if (!d) return
+      const hoveredEnemyId = d.mode === 'enemy_single' ? findEnemyAt(e.clientX, e.clientY) : null
+      updateDrag({ ...d, mouseX: e.clientX, mouseY: e.clientY, hoveredEnemyId })
+    }
+
+    function onUp(e: MouseEvent) {
+      const d = dragRef.current
+      if (!d) return
+      const s = stateRef.current
+      if (!s) { updateDrag(null); return }
+      const card = s.hand.find(c => c.id === d.cardId)
+      if (card && canPlayCard(s, card)) {
+        if (d.mode === 'enemy_single') {
+          const id = findEnemyAt(e.clientX, e.clientY)
+          if (id) dispatch({ type: 'play_card', cardId: d.cardId, targetId: id })
+        } else if (e.clientY < d.handTopY) {
+          // AOE / self: any release above the hand plays the card.
+          dispatch({ type: 'play_card', cardId: d.cardId })
+        }
+      }
+      updateDrag(null)
+    }
+
+    function onCancel() { updateDrag(null) }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    window.addEventListener('blur', onCancel)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('blur', onCancel)
+    }
+  }, [])
+
+  // Suppress text-selection / change cursor while a drag is active.
+  useEffect(() => {
+    if (drag) {
+      document.body.classList.add('dragging-card')
+      return () => document.body.classList.remove('dragging-card')
+    }
+  }, [drag])
+
+  function startDrag(cardId: string, e: React.MouseEvent<HTMLDivElement>) {
+    if (e.button !== 0) return
+    if (!state) return
+    const card = state.hand.find(c => c.id === cardId)
+    if (!card || !canPlayCard(state, card)) return
+
+    const cardEl = e.currentTarget
+    const rect = cardEl.getBoundingClientRect()
+    const cardCenterX = rect.left + rect.width / 2
+    const cardCenterY = rect.top + rect.height / 2 - CARD_LIFT
+
+    const handEl = document.querySelector('.hand-tray') as HTMLElement | null
+    const handTopY = handEl?.getBoundingClientRect().top ?? window.innerHeight - 280
+
+    updateDrag({
+      cardId,
+      cardCenterX,
+      cardCenterY,
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      mode: getCardTargetMode(card),
+      hoveredEnemyId: null,
+      handTopY,
+    })
+    e.preventDefault()
+  }
 
   if (!initialized || !state) {
     return <div className="min-h-screen game-bg" />
@@ -59,8 +180,16 @@ export default function Game() {
   }
 
   // Combat phases
-  const isTargeting = state.phase === 'targeting'
   const isEnemyTurn = state.phase === 'combat_enemy_turn'
+
+  // Highlights derived from the drag mode.
+  const playerHighlighted = !!drag && drag.mode === 'self'
+  const isEnemyHighlighted = (enemyId: string): boolean => {
+    if (!drag) return false
+    if (drag.mode === 'enemy_all') return true
+    if (drag.mode === 'enemy_single') return drag.hoveredEnemyId === enemyId
+    return false
+  }
 
   return (
     <div className="game-bg flex flex-col px-4 pt-5" style={{ minHeight: '100vh' }}>
@@ -84,7 +213,7 @@ export default function Game() {
         <div className="relative z-[1] w-full max-w-7xl mx-auto px-2 flex items-end justify-between gap-6">
           {/* Player side */}
           <div className="flex items-end shrink-0">
-            <PlayerView state={state} />
+            <PlayerView state={state} highlighted={playerHighlighted} />
           </div>
 
           {/* Enemy side */}
@@ -93,32 +222,19 @@ export default function Game() {
               <EnemyView
                 key={enemy.id}
                 enemy={enemy}
-                targetable={isTargeting}
-                onClick={isTargeting ? () => dispatch({ type: 'target_enemy', enemyId: enemy.id }) : undefined}
+                targetable={false}
+                highlighted={isEnemyHighlighted(enemy.id)}
               />
             ))}
           </div>
         </div>
 
         {/* Banners — overlay so they don't push content */}
-        {(isTargeting || isEnemyTurn) && (
+        {isEnemyTurn && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-            {isTargeting && (
-              <div className="banner banner-targeting flex items-center gap-4">
-                <span className="text-sm">Click an enemy to target</span>
-                <button
-                  className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-bold border border-red-300 cursor-pointer"
-                  onClick={() => dispatch({ type: 'cancel_target' })}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            {isEnemyTurn && (
-              <div className="banner banner-enemy-turn animate-pulse text-sm">
-                Enemy Turn...
-              </div>
-            )}
+            <div className="banner banner-enemy-turn animate-pulse text-sm">
+              Enemy Turn...
+            </div>
           </div>
         )}
       </div>
@@ -129,7 +245,12 @@ export default function Game() {
         dispatch={dispatch}
         onPeekDraw={() => setPeek('draw')}
         onPeekDiscard={() => setPeek('discard')}
+        draggingCardId={drag?.cardId ?? null}
+        onCardMouseDown={startDrag}
       />
+
+      {/* Drag arrow overlay */}
+      {drag && <DragArrow drag={drag} />}
 
       {/* Peek modals */}
       {peek === 'draw' && (
@@ -195,6 +316,75 @@ export default function Game() {
         <span>KILL ALL</span>
       </button>
     </div>
+  )
+}
+
+// Curved arrow from the lifted card to the cursor — StS-style.
+// Color/style follows the card's target mode so the player can read what the
+// card will do at a glance.
+function DragArrow({ drag }: { drag: DragState }) {
+  const sx = drag.cardCenterX
+  const sy = drag.cardCenterY
+  const ex = drag.mouseX
+  const ey = drag.mouseY
+  // Pull the control point upward so the arc curves up. The further the
+  // cursor moves, the more lateral arc it gets.
+  const midX = (sx + ex) / 2
+  const midY = Math.min(sy, ey) - 60
+  const path = `M ${sx} ${sy} Q ${midX} ${midY} ${ex} ${ey}`
+
+  // Tangent at the end of the bezier: direction = 2*(P2 - P1)
+  const dirX = ex - midX
+  const dirY = ey - midY
+  const angle = Math.atan2(dirY, dirX) * 180 / Math.PI
+
+  const color =
+    drag.mode === 'enemy_single' ? '#ef4444' :
+    drag.mode === 'enemy_all' ? '#f59e0b' :
+    '#3b82f6'
+  const glow =
+    drag.mode === 'enemy_single' ? 'rgba(239, 68, 68, 0.7)' :
+    drag.mode === 'enemy_all' ? 'rgba(245, 158, 11, 0.7)' :
+    'rgba(59, 130, 246, 0.7)'
+
+  // Inline style + explicit width/height attributes so the SVG's coordinate
+  // system maps 1:1 to viewport pixels regardless of any ancestor styling.
+  // High z-index keeps it above every gameplay layer (banners, badges, etc.).
+  return (
+    <svg
+      className="drag-arrow-overlay"
+      width="100%"
+      height="100%"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        pointerEvents: 'none',
+        zIndex: 9999,
+        overflow: 'visible',
+      }}
+      aria-hidden
+    >
+      {/* outer glow stroke */}
+      <path d={path} fill="none" stroke={glow} strokeWidth={20} strokeLinecap="round" opacity={0.55} />
+      {/* main beam */}
+      <path d={path} fill="none" stroke={color} strokeWidth={9} strokeLinecap="round" />
+      {/* origin marker on the card */}
+      <circle cx={sx} cy={sy} r={11} fill={color} opacity={0.95} />
+      <circle cx={sx} cy={sy} r={5} fill="#fff" />
+      {/* arrowhead at the cursor */}
+      <g transform={`translate(${ex} ${ey}) rotate(${angle})`}>
+        <polygon
+          points="0,0 -22,-12 -16,0 -22,12"
+          fill={color}
+          stroke="#fff"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+      </g>
+    </svg>
   )
 }
 

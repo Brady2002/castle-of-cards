@@ -6,9 +6,10 @@ import { CardIcon } from './Card'
 
 type Props = {
   state: GameState
+  highlighted?: boolean
 }
 
-export default function PlayerView({ state }: Props) {
+export default function PlayerView({ state, highlighted }: Props) {
   const hpPct = (state.playerHp / state.playerMaxHp) * 100
   const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#fbbf24' : '#f87171'
 
@@ -21,7 +22,7 @@ export default function PlayerView({ state }: Props) {
   }
 
   return (
-    <div className="character-card flex flex-col items-center">
+    <div className={`character-card flex flex-col items-center ${highlighted ? 'drag-target' : ''}`} data-self-target="true">
       {/* Active powers — above the character */}
       {stacked.size > 0 && (
         <div className="power-row mb-2">

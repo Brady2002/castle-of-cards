@@ -7,12 +7,13 @@ import { ENEMY_DEFS } from './enemies'
 type Props = {
   enemy: EnemyInstance
   targetable: boolean
+  highlighted?: boolean
   onClick?: () => void
 }
 
 const ELITE_BOSS_NAMES = new Set(['Giant Coconut Crab', 'Angry Pelican Flock', 'The Tide King'])
 
-export default function EnemyView({ enemy, targetable, onClick }: Props) {
+export default function EnemyView({ enemy, targetable, highlighted, onClick }: Props) {
   const hpPct = (enemy.hp / enemy.maxHp) * 100
   const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#fbbf24' : '#f87171'
   const isEliteOrBoss = ELITE_BOSS_NAMES.has(enemy.defName)
@@ -20,7 +21,8 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
 
   return (
     <div
-      className={`enemy-card ${targetable ? 'targetable' : ''} ${isEnraged ? 'enraged' : ''}`}
+      className={`enemy-card ${targetable ? 'targetable' : ''} ${highlighted ? 'drag-target' : ''} ${isEnraged ? 'enraged' : ''}`}
+      data-enemy-id={enemy.id}
       onClick={targetable ? onClick : undefined}
     >
       {/* Enemy Art */}

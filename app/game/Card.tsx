@@ -15,10 +15,12 @@ type Props = {
   playable: boolean
   selected?: boolean
   onClick?: () => void
+  onMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void
+  dragging?: boolean
   compact?: boolean
 }
 
-export default function CardComponent({ card, playable, selected, onClick, compact }: Props) {
+export default function CardComponent({ card, playable, selected, onClick, onMouseDown, dragging, compact }: Props) {
   const def = getDef(card)
   const isAttack = def.type === 'attack'
   const isPower = def.type === 'power'
@@ -32,10 +34,12 @@ export default function CardComponent({ card, playable, selected, onClick, compa
   return (
     <div
       onClick={playable || onClick ? onClick : undefined}
+      onMouseDown={onMouseDown}
       className={`
         game-card ${typeClass} ${RARITY_CLASS[def.rarity]}
         ${playable ? 'playable' : !onClick ? 'disabled' : 'playable'}
         ${selected ? 'selected' : ''}
+        ${dragging ? 'dragging' : ''}
         ${w} ${minH} border-2 p-4 flex flex-col items-center gap-2 select-none
       `}
     >

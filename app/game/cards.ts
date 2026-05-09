@@ -417,3 +417,33 @@ export function needsTarget(card: CardInstance): boolean {
     (e.kind === 'damage_eq_block' && e.target === 'single')
   )
 }
+
+// What the player should drag this card onto.
+//   enemy_single — one enemy must be aimed at; cursor picks the target.
+//   enemy_all    — every enemy is highlighted; release anywhere out of hand.
+//   self         — player is highlighted; release anywhere out of hand.
+export type CardTargetMode = 'enemy_single' | 'enemy_all' | 'self'
+
+export function getCardTargetMode(card: CardInstance): CardTargetMode {
+  const def = getDef(card)
+  for (const e of def.effects) {
+    if (
+      (e.kind === 'damage' && e.target === 'single') ||
+      (e.kind === 'multi_hit' && e.target === 'single') ||
+      (e.kind === 'apply_status' && e.target === 'single') ||
+      (e.kind === 'damage_eq_block' && e.target === 'single')
+    ) {
+      return 'enemy_single'
+    }
+  }
+  for (const e of def.effects) {
+    if (
+      (e.kind === 'damage' && e.target === 'all') ||
+      (e.kind === 'apply_status' && e.target === 'all') ||
+      (e.kind === 'damage_eq_block' && e.target === 'all')
+    ) {
+      return 'enemy_all'
+    }
+  }
+  return 'self'
+}

@@ -11,14 +11,17 @@ type Props = {
   dispatch: (action: GameAction) => void
   onPeekDraw: () => void
   onPeekDiscard: () => void
+  draggingCardId: string | null
+  onCardMouseDown: (cardId: string, e: React.MouseEvent<HTMLDivElement>) => void
 }
 
-export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Props) {
+export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, draggingCardId, onCardMouseDown }: Props) {
   const isPlayerTurn = state.phase === 'combat_player_turn' || state.phase === 'targeting'
+  const dragActive = draggingCardId !== null
 
   return (
     <div className="w-full">
-      <div className="hand-tray flex items-stretch gap-7 px-9 pt-8 pb-8">
+      <div className={`hand-tray flex items-stretch gap-7 px-9 pt-8 pb-8 ${dragActive ? 'drag-active' : ''}`}>
         {/* === Left cluster: energy orb + draw pile === */}
         <div className="hand-cluster shrink-0">
           <EnergyOrb energy={state.energy} max={state.maxEnergy} />
@@ -44,15 +47,15 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
           )}
           {state.hand.map(card => {
             const playable = isPlayerTurn && canPlayCard(state, card)
-            const selected = state.selectedCardId === card.id
+            const isDragging = card.id === draggingCardId
 
             return (
               <CardComponent
                 key={card.id}
                 card={card}
                 playable={playable}
-                selected={selected}
-                onClick={playable ? () => dispatch({ type: 'select_card', cardId: card.id }) : undefined}
+                dragging={isDragging}
+                onMouseDown={playable ? (e) => onCardMouseDown(card.id, e) : undefined}
               />
             )
           })}

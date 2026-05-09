@@ -7,7 +7,8 @@
       "Bash(npx next *)",
       "Bash(npx tsc *)",
       "Bash(powershell -Command \"\\(Get-Content app/game/EnemyView.tsx\\) -replace 'width=\\\\\"12\\\\\" height=\\\\\"12\\\\\"', 'width=\\\\\"15\\\\\" height=\\\\\"15\\\\\"' | Set-Content app/game/EnemyView.tsx\")",
-      "Bash(powershell -Command \"\\(Get-Content app/game/EnemyView.tsx\\) -replace 'width=\\\\\"15\\\\\" height=\\\\\"15\\\\\"', 'width=\\\\\"20\\\\\" height=\\\\\"20\\\\\"' | Set-Content app/game/EnemyView.tsx\")"
+      "Bash(powershell -Command \"\\(Get-Content app/game/EnemyView.tsx\\) -replace 'width=\\\\\"15\\\\\" height=\\\\\"15\\\\\"', 'width=\\\\\"20\\\\\" height=\\\\\"20\\\\\"' | Set-Content app/game/EnemyView.tsx\")",
+      "Bash(npm run *)"
     ]
   }
 }
