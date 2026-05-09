@@ -66,12 +66,20 @@ export default function MapScreen({ state, dispatch }: Props) {
     return { x, y }
   }
 
+  // Build a list of upcoming node types as a small legend
+  const legendTypes: MapNodeType[] = ['combat', 'elite', 'rest', 'shop', 'event', 'boss']
+
   return (
-    <div className="min-h-screen game-bg flex flex-col items-center px-4 py-4 gap-3">
+    <div className="min-h-screen game-bg flex flex-col items-center px-4 py-5 gap-4">
       {/* Header */}
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-5xl">
         <div className="header-bar px-6 py-3 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-amber-100">Choose Your Path</h2>
+          <div>
+            <h2 className="text-xl font-bold text-amber-100 leading-tight">Choose Your Path</h2>
+            <div className="text-[11px] text-amber-200/70 tracking-wider uppercase">
+              Floor {Math.min(10, state.encounter)} · {state.map.nodes.filter(n => n.visited).length}/{state.map.nodes.length} explored
+            </div>
+          </div>
           <div className="flex gap-4 items-center">
             <div className="flex items-center gap-2 text-white text-sm">
               <svg width="14" height="14" viewBox="0 0 16 16">
@@ -93,10 +101,29 @@ export default function MapScreen({ state, dispatch }: Props) {
         </div>
       </div>
 
-      {/* Map */}
-      <div className="flex-1 overflow-y-auto w-full max-w-lg">
-        <div className="panel p-4" style={{ minHeight: svgHeight + 40 }}>
-          <svg width="100%" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ display: 'block' }}>
+      {/* Two-column body: legend on left, map in middle */}
+      <div className="flex gap-4 w-full max-w-5xl flex-1 min-h-0 items-stretch">
+        {/* Legend */}
+        <aside className="panel p-4 w-56 hidden md:flex flex-col gap-2 self-start sticky top-4">
+          <div className="font-bold text-amber-900 text-base mb-1">Legend</div>
+          {legendTypes.map(t => {
+            const c = NODE_COLORS[t]
+            return (
+              <div key={t} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg" style={{ background: c.bg, border: `1.5px solid ${c.border}` }}>
+                <span className="text-base leading-none">{NODE_ICONS[t]}</span>
+                <span className="font-bold text-sm" style={{ color: c.text }}>{NODE_LABELS[t]}</span>
+              </div>
+            )
+          })}
+          <div className="mt-2 pt-2 border-t border-amber-200/50 text-[11px] text-amber-800/80 leading-relaxed">
+            Glowing nodes are reachable. Pick a node to begin.
+          </div>
+        </aside>
+
+        {/* Map */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="panel p-5" style={{ minHeight: svgHeight + 40 }}>
+            <svg width="100%" viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ display: 'block', maxHeight: 'calc(100vh - 160px)' }}>
             {/* Edges */}
             {rows.map((rowNodes) =>
               rowNodes.map(node =>
@@ -188,7 +215,8 @@ export default function MapScreen({ state, dispatch }: Props) {
                 )
               })
             )}
-          </svg>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

@@ -24,24 +24,24 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
       onClick={targetable ? onClick : undefined}
     >
       {/* Enemy Art */}
-      <div className="flex justify-center mb-1">
-        <EnemyArt name={enemy.defName} size={isEliteOrBoss ? 56 : 44} />
+      <div className="flex justify-center mb-2">
+        <EnemyArt name={enemy.defName} size={isEliteOrBoss ? 120 : 92} />
       </div>
 
       {/* Name */}
-      <div className="text-[11px] font-bold text-center leading-tight mb-1" style={{ color: isEnraged ? '#dc2626' : '#374151' }}>
+      <div className="text-[14px] font-bold text-center leading-tight mb-1.5" style={{ color: isEnraged ? '#dc2626' : '#374151' }}>
         {enemy.defName}{isEnraged ? ' (Enraged)' : ''}
       </div>
 
       {/* HP Bar */}
-      <div className="w-full mb-1.5">
-        <div className="h-[6px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.15)' }}>
+      <div className="w-full mb-2">
+        <div className="h-[10px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.18)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{ width: `${hpPct}%`, background: hpColor }}
           />
         </div>
-        <div className="text-[9px] text-center text-gray-500 mt-0.5">
+        <div className="text-[11px] text-center text-gray-600 font-bold mt-1">
           {enemy.hp}/{enemy.maxHp}
         </div>
       </div>

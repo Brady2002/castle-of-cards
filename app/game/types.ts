@@ -1,6 +1,17 @@
 // === Cards ===
 export type Rarity = 'common' | 'uncommon' | 'rare'
-export type CardType = 'attack' | 'skill'
+export type CardType = 'attack' | 'skill' | 'power'
+
+// Powers fire a trigger at the start of every player turn after the one
+// they were played on. They live in GameState.activePowers (one entry per
+// stack — playing the same power twice gives 2 entries).
+export type PowerTrigger =
+  | { kind: 'turn_start_block'; amount: number }
+  | { kind: 'turn_start_strength'; amount: number }
+  | { kind: 'turn_start_energy'; amount: number }
+  | { kind: 'turn_start_draw'; count: number }
+  | { kind: 'turn_start_damage_all'; amount: number }
+  | { kind: 'turn_start_heal'; amount: number }
 
 export type CardEffect =
   | { kind: 'damage'; amount: number; target: 'single' }
@@ -10,6 +21,10 @@ export type CardEffect =
   | { kind: 'draw'; count: number }
   | { kind: 'apply_status'; status: StatusType; amount: number; target: 'single' | 'all' }
   | { kind: 'energy'; amount: number }
+  | { kind: 'heal'; amount: number }
+  | { kind: 'gain_status'; status: StatusType; amount: number }
+  | { kind: 'damage_eq_block'; target: 'single' | 'all' }
+  | { kind: 'lose_hp'; amount: number }
 
 export type CardDefinition = {
   name: string
@@ -17,10 +32,18 @@ export type CardDefinition = {
   rarity: Rarity
   energyCost: number
   effects: CardEffect[]
+  // Only meaningful when type === 'power'. The card exhausts on play and
+  // this trigger fires at the start of each subsequent player turn.
+  powerTrigger?: PowerTrigger
   description: string
 }
 
 export type CardInstance = {
+  id: string
+  defName: string
+}
+
+export type PowerInstance = {
   id: string
   defName: string
 }
@@ -120,6 +143,7 @@ export type GameState = {
   hand: CardInstance[]
   deck: CardInstance[]
   discard: CardInstance[]
+  activePowers: PowerInstance[]
 
   // Combat
   enemies: EnemyInstance[]

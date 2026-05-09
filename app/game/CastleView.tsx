@@ -28,7 +28,7 @@ export default function CastleView({ castle }: Props) {
   }
 
   return (
-    <div className="panel min-w-[260px] w-[280px] p-4 flex flex-col">
+    <div className="panel min-w-[280px] w-[320px] p-5 flex flex-col">
       <div className="font-bold text-amber-900 text-base mb-3">Your Castle</div>
 
       {/* Render tiers top-to-bottom (3→0) so it looks like a castle */}

@@ -18,7 +18,7 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
   return (
     <div className="min-h-screen game-bg flex flex-col items-center px-4 py-6 gap-4">
       {/* Header */}
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-6xl">
         <div className="header-bar px-6 py-3 flex items-center justify-between">
           <h2 className="text-xl font-bold text-amber-100">Build Your Castle</h2>
           <div className="flex gap-4 items-center">
@@ -42,15 +42,18 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-6 w-full max-w-4xl flex-1 min-h-0">
+      <div className="flex gap-6 w-full max-w-6xl flex-1 min-h-0">
         {/* Castle view */}
         <CastleView castle={state.castle} />
 
         {/* Shop */}
         <div className="flex-1 flex flex-col gap-3">
-          <div className="panel p-4 flex-1">
-            <div className="font-bold text-amber-900 text-base mb-3">Castle Parts</div>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="panel p-5 flex-1">
+            <div className="flex items-baseline justify-between mb-3">
+              <div className="font-bold text-amber-900 text-lg">Castle Parts</div>
+              <div className="text-xs text-amber-700/70 font-bold">{state.castle.length}/{ALL_PARTS.length} built</div>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {ALL_PARTS.map(partType => (
                 <PartButton
                   key={partType}

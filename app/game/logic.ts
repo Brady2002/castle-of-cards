@@ -109,6 +109,7 @@ export function createGame(): GameState {
     hand: [],
     deck,
     discard: [],
+    activePowers: [],
     enemies: [],
     selectedCardId: null,
     encounter: 0,
@@ -162,6 +163,7 @@ function initCombat(state: GameState, enemyNames: string[]): GameState {
     hand: drawn,
     deck,
     discard,
+    activePowers: [],
     playerBlock: bonuses.startingBlock,
     energy,
     maxEnergy: STARTING_ENERGY,
@@ -284,12 +286,19 @@ function playCardDirect(state: GameState, cardId: string, targetId?: string): Ga
 function playCard(state: GameState, card: CardInstance, targetId: string | undefined): GameState {
   const def = getDef(card)
 
+  // Power cards exhaust instead of going to the discard pile and become an
+  // active power for the rest of combat.
+  const isPower = def.type === 'power'
+
   let newState: GameState = {
     ...state,
     phase: 'combat_player_turn',
     energy: state.energy - def.energyCost,
     hand: state.hand.filter(c => c.id !== card.id),
-    discard: [...state.discard, card],
+    discard: isPower ? state.discard : [...state.discard, card],
+    activePowers: isPower && def.powerTrigger
+      ? [...state.activePowers, { id: card.id, defName: card.defName }]
+      : state.activePowers,
     selectedCardId: null,
   }
 
@@ -305,6 +314,11 @@ function playCard(state: GameState, card: CardInstance, targetId: string | undef
       const transitioned = checkPhaseTransition(e)
       return transitioned ?? e
     }),
+  }
+
+  // Self-damage cards (lose_hp) can kill the player mid-turn.
+  if (newState.playerHp <= 0) {
+    return { ...newState, phase: 'lose', playerHp: 0, playerBlock: 0 }
   }
 
   // Check if all enemies dead
@@ -404,6 +418,47 @@ function resolveEffect(
 
     case 'energy':
       return { ...state, energy: state.energy + effect.amount }
+
+    case 'heal':
+      return {
+        ...state,
+        playerHp: Math.min(state.playerMaxHp, state.playerHp + effect.amount),
+      }
+
+    case 'gain_status':
+      return {
+        ...state,
+        playerStatus: {
+          ...state.playerStatus,
+          [effect.status]: state.playerStatus[effect.status] + effect.amount,
+        },
+      }
+
+    case 'damage_eq_block': {
+      const base = state.playerBlock
+      if (effect.target === 'all') {
+        const enemies = state.enemies.map(e => {
+          const dmg = calcDamage(base, state.playerStatus.strength, state.playerStatus.weak, e.status.vulnerable)
+          const result = applyDamageToTarget(e.hp, e.block, dmg)
+          return { ...e, hp: result.hp, block: result.block }
+        })
+        return { ...state, enemies }
+      }
+      if (!targetId) return state
+      const enemies = state.enemies.map(e => {
+        if (e.id !== targetId) return e
+        const dmg = calcDamage(base, state.playerStatus.strength, state.playerStatus.weak, e.status.vulnerable)
+        const result = applyDamageToTarget(e.hp, e.block, dmg)
+        return { ...e, hp: result.hp, block: result.block }
+      })
+      return { ...state, enemies }
+    }
+
+    case 'lose_hp':
+      return {
+        ...state,
+        playerHp: Math.max(0, state.playerHp - effect.amount),
+      }
 
     default:
       return state
@@ -514,7 +569,8 @@ function resolveEnemyTurn(state: GameState): GameState {
   const drawCount = HAND_SIZE + state.castleBonuses.extraDraw
   const { drawn, deck, discard } = drawCards(state.deck, discardPile, drawCount)
 
-  return {
+  // Build the next-turn state so we can run power triggers against it.
+  let nextState: GameState = {
     ...state,
     phase: 'combat_player_turn',
     playerHp,
@@ -528,6 +584,65 @@ function resolveEnemyTurn(state: GameState): GameState {
     selectedCardId: null,
     turnNumber: state.turnNumber + 1,
   }
+
+  // Apply turn-start power triggers
+  nextState = applyTurnStartPowers(nextState)
+
+  // Powers can kill enemies (Solar Flare etc.) — handle victory.
+  if (nextState.enemies.length > 0 && nextState.enemies.every(e => e.hp <= 0)) {
+    const currentNode = nextState.currentNodeId ? getNode(nextState.map, nextState.currentNodeId) : null
+    const reward = currentNode ? getSandDollarReward(currentNode.difficulty, currentNode.type) : 0
+    return {
+      ...nextState,
+      phase: 'combat_victory',
+      enemies: nextState.enemies.filter(e => e.hp > 0),
+      sandDollarsEarned: reward,
+    }
+  }
+  // Drop dead enemies
+  nextState = { ...nextState, enemies: nextState.enemies.filter(e => e.hp > 0) }
+
+  return nextState
+}
+
+function applyTurnStartPowers(state: GameState): GameState {
+  if (state.activePowers.length === 0) return state
+  let s = state
+  for (const power of state.activePowers) {
+    const def = getDef(power)
+    const trigger = def.powerTrigger
+    if (!trigger) continue
+    switch (trigger.kind) {
+      case 'turn_start_block':
+        s = { ...s, playerBlock: s.playerBlock + trigger.amount }
+        break
+      case 'turn_start_strength':
+        s = { ...s, playerStatus: { ...s.playerStatus, strength: s.playerStatus.strength + trigger.amount } }
+        break
+      case 'turn_start_energy':
+        s = { ...s, energy: s.energy + trigger.amount }
+        break
+      case 'turn_start_draw': {
+        const { drawn, deck, discard } = drawCards(s.deck, s.discard, trigger.count)
+        s = { ...s, hand: [...s.hand, ...drawn], deck, discard }
+        break
+      }
+      case 'turn_start_heal':
+        s = { ...s, playerHp: Math.min(s.playerMaxHp, s.playerHp + trigger.amount) }
+        break
+      case 'turn_start_damage_all': {
+        const enemies = s.enemies.map(e => {
+          if (e.hp <= 0) return e
+          const dmg = calcDamage(trigger.amount, s.playerStatus.strength, s.playerStatus.weak, e.status.vulnerable)
+          const result = applyDamageToTarget(e.hp, e.block, dmg)
+          return { ...e, hp: result.hp, block: result.block }
+        })
+        s = { ...s, enemies }
+        break
+      }
+    }
+  }
+  return s
 }
 
 // === Victory / Rewards ===

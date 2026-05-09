@@ -3,7 +3,9 @@
     "allow": [
       "Bash(cd:*)",
       "WebFetch(domain:slaythespire.wiki.gg)",
-      "WebFetch(domain:slay-the-spire.fandom.com)"
+      "WebFetch(domain:slay-the-spire.fandom.com)",
+      "Bash(npx next *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
