@@ -885,6 +885,52 @@ body {
   50% { box-shadow: 0 0 22px rgba(220, 38, 38, 0.55), 2px 4px 12px rgba(0, 0, 0, 0.15); }
 }
 
+/* Enemy intent animations — fired during the enemy turn. Each one fully
+   replaces the idle bob via the animation shorthand for its duration. */
+.enemy-card.acting-attack {
+  animation: enemy-attack 0.42s cubic-bezier(0.4, 0, 0.55, 1.4) both;
+  z-index: 4;
+}
+.enemy-card.acting-defend {
+  animation: enemy-defend 0.42s ease-out both;
+  z-index: 4;
+}
+.enemy-card.acting-buff {
+  animation: enemy-buff 0.42s ease-out both;
+  z-index: 4;
+}
+.enemy-card.acting-debuff {
+  animation: enemy-debuff 0.42s ease-in-out both;
+  z-index: 4;
+}
+
+@keyframes enemy-attack {
+  0% { transform: translateX(0) scale(1); filter: none; }
+  35% { transform: translateX(-58px) scale(1.08); filter: drop-shadow(0 6px 14px rgba(220, 38, 38, 0.55)); }
+  55% { transform: translateX(-72px) scale(1.1); filter: drop-shadow(0 6px 18px rgba(220, 38, 38, 0.7)); }
+  100% { transform: translateX(0) scale(1); filter: none; }
+}
+
+@keyframes enemy-defend {
+  0% { transform: scale(1); filter: none; }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(59, 130, 246, 0.85)); }
+  100% { transform: scale(1); filter: none; }
+}
+
+@keyframes enemy-buff {
+  0% { transform: translateY(0) scale(1); filter: none; }
+  50% { transform: translateY(-14px) scale(1.06); filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.85)); }
+  100% { transform: translateY(0) scale(1); filter: none; }
+}
+
+@keyframes enemy-debuff {
+  0%, 100% { transform: translateX(0); filter: none; }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.7)); }
+  60% { transform: translateX(-6px); filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.7)); }
+  80% { transform: translateX(6px); }
+}
+
 /* Enemy floating animation — gentle bob like sea creatures */
 .enemy-card {
   animation: enemy-bob 4s ease-in-out infinite;

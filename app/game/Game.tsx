@@ -19,6 +19,8 @@ import MapPeekModal from './MapPeekModal'
 
 type Peek = null | 'draw' | 'discard' | 'map'
 
+type ActingKind = 'attack' | 'defend' | 'buff' | 'debuff'
+
 // CSS lift amount for a dragged card. Must match `.game-card.dragging` in globals.css.
 const CARD_LIFT = 220
 
@@ -73,13 +75,48 @@ export default function Game() {
     setInitialized(true)
   }, [])
 
-  // Enemy turn auto-resolve with delay
+  // Enemy turn — animate each enemy acting on a stagger, then resolve.
+  // Damage still applies in a single batch at the end of resolve_enemy_turn,
+  // but visually each enemy plays a lunge/pulse keyed to its intent type so
+  // you can see who's doing what.
+  const [actingEnemies, setActingEnemies] = useState<Map<string, ActingKind>>(new Map())
   useEffect(() => {
     if (!state || state.phase !== 'combat_enemy_turn') return
-    const timer = setTimeout(() => {
+    const ENEMY_ANIM_MS = 420
+    const STAGGER_MS = 280
+    const list = state.enemies
+    const timers: number[] = []
+    list.forEach((e, i) => {
+      const intent = e.intent.type
+      const kind: ActingKind =
+        intent === 'attack' || intent === 'multi_attack' ? 'attack' :
+        intent === 'defend' ? 'defend' :
+        intent === 'buff' ? 'buff' :
+        'debuff'
+      timers.push(window.setTimeout(() => {
+        setActingEnemies(prev => {
+          const next = new Map(prev)
+          next.set(e.id, kind)
+          return next
+        })
+        if (kind === 'attack') playSfx('/audio/throw.wav', 0.45)
+      }, i * STAGGER_MS))
+      timers.push(window.setTimeout(() => {
+        setActingEnemies(prev => {
+          const next = new Map(prev)
+          next.delete(e.id)
+          return next
+        })
+      }, i * STAGGER_MS + ENEMY_ANIM_MS))
+    })
+    const total = (list.length - 1) * STAGGER_MS + ENEMY_ANIM_MS
+    timers.push(window.setTimeout(() => {
       dispatch({ type: 'resolve_enemy_turn' })
-    }, 800)
-    return () => clearTimeout(timer)
+    }, total + 120))
+    return () => {
+      timers.forEach(t => window.clearTimeout(t))
+      setActingEnemies(new Map())
+    }
   }, [state?.phase])
 
   // Ambient waves — loop forever at low volume, started on first user interaction
@@ -371,6 +408,7 @@ export default function Game() {
                 enemy={enemy}
                 targetable={false}
                 highlighted={isEnemyHighlighted(enemy.id)}
+                acting={actingEnemies.get(enemy.id)}
               />
             ))}
           </div>
