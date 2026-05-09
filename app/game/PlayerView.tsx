@@ -47,7 +47,7 @@ export default function PlayerView({ state }: Props) {
 
         {/* Block badge — on the character */}
         {state.playerBlock > 0 && (
-          <div className="absolute top-2 -left-3 w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-blue-900"
+          <div className="absolute top-2 -left-3 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-blue-900"
             style={{ background: 'linear-gradient(135deg, #93c5fd, #60a5fa)', border: '2px solid #2563eb', boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
             {state.playerBlock}
           </div>
@@ -55,34 +55,34 @@ export default function PlayerView({ state }: Props) {
       </div>
 
       {/* Name + HP */}
-      <div className="text-[15px] font-bold text-center text-amber-900 mb-1">You</div>
-      <div className="w-[180px]">
-        <div className="h-[12px] rounded-full overflow-hidden border" style={{ background: 'rgba(0,0,0,0.18)', borderColor: 'rgba(0,0,0,0.25)' }}>
+      <div className="text-[24px] font-bold text-center text-amber-900 mb-2">You</div>
+      <div className="w-[290px]">
+        <div className="h-[18px] rounded-full overflow-hidden border-2" style={{ background: 'rgba(0,0,0,0.18)', borderColor: 'rgba(0,0,0,0.25)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{ width: `${hpPct}%`, background: hpColor }}
           />
         </div>
-        <div className="text-[12px] text-center text-amber-900/80 font-bold mt-0.5">
+        <div className="text-[18px] text-center text-amber-900/80 font-bold mt-1.5">
           {state.playerHp}/{state.playerMaxHp}
         </div>
       </div>
 
       {/* Status pills */}
       {(state.playerStatus.vulnerable > 0 || state.playerStatus.weak > 0 || state.playerStatus.strength > 0) && (
-        <div className="flex flex-wrap gap-1 justify-center mt-1.5 max-w-[200px]">
+        <div className="flex flex-wrap gap-2 justify-center mt-3 max-w-[320px]">
           {state.playerStatus.vulnerable > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#92400e', background: '#fef3c7', border: '1px solid #fbbf24' }}>
+            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#92400e', background: '#fef3c7', border: '1px solid #fbbf24' }}>
               Vuln {state.playerStatus.vulnerable}
             </span>
           )}
           {state.playerStatus.weak > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#5b21b6', background: '#ede9fe', border: '1px solid #c4b5fd' }}>
+            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#5b21b6', background: '#ede9fe', border: '1px solid #c4b5fd' }}>
               Weak {state.playerStatus.weak}
             </span>
           )}
           {state.playerStatus.strength > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#991b1b', background: '#fee2e2', border: '1px solid #fca5a5' }}>
+            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#991b1b', background: '#fee2e2', border: '1px solid #fca5a5' }}>
               Str +{state.playerStatus.strength}
             </span>
           )}
@@ -95,7 +95,7 @@ export default function PlayerView({ state }: Props) {
 // Beach-kid character: bucket helmet, striped tee, shovel + starfish shield
 function PlayerArt() {
   return (
-    <svg width="180" height="240" viewBox="0 0 120 160" className="drop-shadow-md">
+    <svg width="290" height="385" viewBox="0 0 120 160" className="drop-shadow-md">
       {/* Shovel (back hand, raised) */}
       <rect x="92" y="36" width="3" height="46" rx="1.5" fill="#a16207" stroke="#78350f" strokeWidth="1" />
       <path d="M85 16 L102 16 L101 34 L86 34 Z" fill="#cbd5e1" stroke="#475569" strokeWidth="1.5" />
@@ -109,13 +109,6 @@ function PlayerArt() {
         <circle cx="-4" cy="2" r="1" fill="#7f1d1d" />
         <circle cx="4" cy="2" r="1" fill="#7f1d1d" />
       </g>
-
-      {/* Bucket helmet — yellow with handle */}
-      <path d="M30 40 L30 18 Q30 12 36 12 L78 12 Q84 12 84 18 L84 40 Z"
-        fill="#fbbf24" stroke="#a16207" strokeWidth="2" />
-      <rect x="28" y="38" width="58" height="6" rx="1" fill="#f59e0b" stroke="#a16207" strokeWidth="1.5" />
-      {/* Handle */}
-      <path d="M40 14 Q40 4 60 4 Q80 4 80 14" fill="none" stroke="#78350f" strokeWidth="2" strokeLinecap="round" />
 
       {/* Face */}
       <ellipse cx="58" cy="50" rx="14" ry="13" fill="#fde4ca" stroke="#c4956a" strokeWidth="1.5" />

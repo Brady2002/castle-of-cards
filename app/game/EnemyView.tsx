@@ -24,31 +24,31 @@ export default function EnemyView({ enemy, targetable, onClick }: Props) {
       onClick={targetable ? onClick : undefined}
     >
       {/* Enemy Art */}
-      <div className="flex justify-center mb-2">
-        <EnemyArt name={enemy.defName} size={isEliteOrBoss ? 120 : 92} />
+      <div className="flex justify-center mb-3">
+        <EnemyArt name={enemy.defName} size={isEliteOrBoss ? 200 : 150} />
       </div>
 
       {/* Name */}
-      <div className="text-[14px] font-bold text-center leading-tight mb-1.5" style={{ color: isEnraged ? '#dc2626' : '#374151' }}>
+      <div className="text-[22px] font-bold text-center leading-tight mb-3" style={{ color: isEnraged ? '#dc2626' : '#374151' }}>
         {enemy.defName}{isEnraged ? ' (Enraged)' : ''}
       </div>
 
       {/* HP Bar */}
-      <div className="w-full mb-2">
-        <div className="h-[10px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.18)' }}>
+      <div className="w-full mb-3.5">
+        <div className="h-[18px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.18)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{ width: `${hpPct}%`, background: hpColor }}
           />
         </div>
-        <div className="text-[11px] text-center text-gray-600 font-bold mt-1">
+        <div className="text-[19px] text-center text-gray-600 font-bold mt-1.5">
           {enemy.hp}/{enemy.maxHp}
         </div>
       </div>
 
       {/* Block */}
       {enemy.block > 0 && (
-        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-blue-800"
+        <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-[17px] font-bold text-blue-800"
           style={{ background: 'linear-gradient(135deg, #93c5fd, #60a5fa)', border: '2px solid #3b82f6' }}>
           {enemy.block}
         </div>
@@ -190,25 +190,25 @@ function IntentIcon({ kind }: { kind: 'attack' | 'defend' | 'buff' | 'debuff' })
   switch (kind) {
     case 'attack':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#fca5a5" />
         </svg>
       )
     case 'defend':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M8 1 L14 4 L14 10 L8 15 L2 10 L2 4 Z" fill="#93c5fd" />
         </svg>
       )
     case 'buff':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M8 2 L10 6 L14 7 L11 10 L12 14 L8 12 L4 14 L5 10 L2 7 L6 6 Z" fill="#fcd34d" />
         </svg>
       )
     case 'debuff':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <circle cx="8" cy="8" r="6" fill="none" stroke="#c4b5fd" strokeWidth="2" />
           <path d="M5 5 L11 11 M11 5 L5 11" stroke="#c4b5fd" strokeWidth="1.5" />
         </svg>
@@ -220,21 +220,21 @@ function StatusIcon({ kind }: { kind: 'vulnerable' | 'weak' | 'strength' }) {
   switch (kind) {
     case 'vulnerable':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M8 2 L14 13 L2 13 Z" fill="none" stroke="#fbbf24" strokeWidth="1.6" strokeLinejoin="round" />
           <path d="M8 6 L8 10 M8 11.5 L8 12" stroke="#fbbf24" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       )
     case 'weak':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M3 8 Q5 4 8 8 Q11 12 13 8" fill="none" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" />
           <path d="M2 12 L14 12" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
         </svg>
       )
     case 'strength':
       return (
-        <svg width="12" height="12" viewBox="0 0 16 16">
+        <svg width="20" height="20" viewBox="0 0 16 16">
           <path d="M3 6 L6 6 L6 3 L10 3 L10 6 L13 6 L13 10 L10 10 L10 13 L6 13 L6 10 L3 10 Z" fill="#fca5a5" />
         </svg>
       )
@@ -243,7 +243,7 @@ function StatusIcon({ kind }: { kind: 'vulnerable' | 'weak' | 'strength' }) {
 
 function StatusBadge({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
   return (
-    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ color, background: bg }}>
+    <span className="text-[15px] font-bold px-2.5 py-1 rounded-full" style={{ color, background: bg }}>
       {label} {value}
     </span>
   )
@@ -255,7 +255,7 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
       const effectiveDmg = intent.damage + strength
       return (
         <div className="intent-badge intent-attack">
-          <svg width="12" height="12" viewBox="0 0 16 16">
+          <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#dc2626" />
           </svg>
           <span>{effectiveDmg}</span>
@@ -266,7 +266,7 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
       const effectiveDmg = intent.damage + strength
       return (
         <div className="intent-badge intent-attack">
-          <svg width="12" height="12" viewBox="0 0 16 16">
+          <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#dc2626" />
           </svg>
           <span>{effectiveDmg}x{intent.hits}</span>
@@ -276,7 +276,7 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
     case 'defend':
       return (
         <div className="intent-badge intent-defend">
-          <svg width="12" height="12" viewBox="0 0 16 16">
+          <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 1 L14 4 L14 10 L8 15 L2 10 L2 4 Z" fill="#3b82f6" />
           </svg>
           <span>{intent.block}</span>
@@ -285,7 +285,7 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
     case 'buff':
       return (
         <div className="intent-badge intent-buff">
-          <svg width="12" height="12" viewBox="0 0 16 16">
+          <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 2 L10 6 L14 7 L11 10 L12 14 L8 12 L4 14 L5 10 L2 7 L6 6 Z" fill="#f59e0b" />
           </svg>
           <span>+{intent.amount}</span>
@@ -294,7 +294,7 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
     case 'debuff':
       return (
         <div className="intent-badge intent-debuff">
-          <svg width="12" height="12" viewBox="0 0 16 16">
+          <svg width="20" height="20" viewBox="0 0 16 16">
             <circle cx="8" cy="8" r="6" fill="none" stroke="#8b5cf6" strokeWidth="2" />
             <path d="M5 5 L11 11 M11 5 L5 11" stroke="#8b5cf6" strokeWidth="1.5" />
           </svg>

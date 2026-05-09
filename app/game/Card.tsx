@@ -2,7 +2,7 @@
 
 import React from 'react'
 import type { CardInstance } from './types'
-import { getDef, needsTarget } from './cards'
+import { getDef } from './cards'
 
 const RARITY_CLASS: Record<string, string> = {
   common: 'rarity-common',
@@ -23,12 +23,11 @@ export default function CardComponent({ card, playable, selected, onClick, compa
   const isAttack = def.type === 'attack'
   const isPower = def.type === 'power'
   const typeClass = isAttack ? 'game-card-attack' : isPower ? 'game-card-power' : 'game-card-skill'
-  const targeted = needsTarget(card)
   const dividerClass = isAttack ? 'border-red-300/50' : isPower ? 'border-purple-300/60' : 'border-blue-300/50'
   const typeLabelClass = isAttack ? 'text-red-500' : isPower ? 'text-purple-600' : 'text-blue-500'
 
-  const w = compact ? 'w-[110px]' : 'w-[150px]'
-  const minH = compact ? 'min-h-[150px]' : 'min-h-[200px]'
+  const w = compact ? 'w-[170px]' : 'w-[200px]'
+  const minH = compact ? 'min-h-[235px]' : 'min-h-[280px]'
 
   return (
     <div
@@ -37,39 +36,28 @@ export default function CardComponent({ card, playable, selected, onClick, compa
         game-card ${typeClass} ${RARITY_CLASS[def.rarity]}
         ${playable ? 'playable' : !onClick ? 'disabled' : 'playable'}
         ${selected ? 'selected' : ''}
-        ${w} ${minH} border-2 p-3 flex flex-col items-center gap-1.5 select-none
+        ${w} ${minH} border-2 p-4 flex flex-col items-center gap-2 select-none
       `}
     >
       {/* Energy cost badge */}
-      <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
+      <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
         style={{
           background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-          border: '2px solid #d97706',
+          border: '3px solid #d97706',
           color: '#78350f',
-          boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.28)',
         }}
       >
         {def.energyCost}
       </div>
 
-      {/* Target indicator */}
-      {targeted && (
-        <div className="absolute -top-1.5 -left-1.5">
-          <svg width="16" height="16" viewBox="0 0 16 16">
-            <circle cx="8" cy="8" r="6" fill="none" stroke="#dc2626" strokeWidth="1.5" />
-            <circle cx="8" cy="8" r="3" fill="none" stroke="#dc2626" strokeWidth="1" />
-            <circle cx="8" cy="8" r="1" fill="#dc2626" />
-          </svg>
-        </div>
-      )}
-
       {/* Card icon */}
-      <div className="mt-1">
-        <CardIcon cardName={def.name} type={def.type} size={compact ? 28 : 42} />
+      <div className="mt-1.5">
+        <CardIcon cardName={def.name} type={def.type} size={compact ? 40 : 64} />
       </div>
 
       {/* Name */}
-      <div className={`font-bold text-gray-800 text-center leading-tight ${compact ? 'text-[12px]' : 'text-[15px]'}`}>
+      <div className={`font-bold text-gray-800 text-center leading-tight ${compact ? 'text-[17px]' : 'text-[21px]'}`}>
         {def.name}
       </div>
 
@@ -77,12 +65,12 @@ export default function CardComponent({ card, playable, selected, onClick, compa
       <div className={`w-3/4 border-t ${dividerClass}`} />
 
       {/* Type label */}
-      <div className={`text-[10px] font-bold uppercase tracking-wider ${typeLabelClass}`}>
+      <div className={`text-[14px] font-bold uppercase tracking-wider ${typeLabelClass}`}>
         {def.type}
       </div>
 
       {/* Description */}
-      <div className={`text-gray-600 text-center leading-snug ${compact ? 'text-[11px]' : 'text-[12px]'}`}>
+      <div className={`text-gray-700 text-center leading-snug ${compact ? 'text-[14px]' : 'text-[16px]'}`}>
         {def.description}
       </div>
 

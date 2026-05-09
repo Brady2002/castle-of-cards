@@ -8,7 +8,7 @@ const patrickHand = Patrick_Hand({
 })
 
 export const metadata: Metadata = {
-  title: 'Sandcastle',
+  title: 'Castle of Cards',
   description: 'Build your sandcastle before the tide rolls in.',
 }
 

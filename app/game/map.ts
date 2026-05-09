@@ -69,36 +69,49 @@ type RowDef = {
   difficulty?: DifficultyTier
 }
 
+// Rest/event row biases. Floors sandwiched between two elite rows lean heavier
+// toward rest; floors next to one elite get a moderate bias; floors with no
+// adjacent elite stay 50/50.
+const REST_HEAVY: MapNodeType[] = ['rest', 'rest', 'rest', 'event']
+const REST_BIASED: MapNodeType[] = ['rest', 'rest', 'event']
+const REST_NEUTRAL: MapNodeType[] = ['rest', 'event']
+
 const ROW_DEFS: RowDef[] = [
-  // Row 0: Easy combat, 3 nodes
+  // Floor 1: Pure easy combat (intro)
   { count: 3, types: ['combat'], difficulty: 'easy' },
-  // Row 1: Combat / Event, 3 nodes
-  { count: 3, types: ['combat', 'combat', 'event'], difficulty: 'easy' },
-  // Row 2: Combat / Event, 3 nodes
+  // Floor 2: Easy combat + event (combat-leaning)
   { count: 3, types: ['combat', 'event', 'combat'], difficulty: 'easy' },
-  // Row 3: Rest / Shop, 2-3 nodes
-  { count: [2, 3], types: ['rest', 'shop', 'rest'] },
-  // Row 4: Medium combat, 3 nodes
-  { count: 3, types: ['combat'], difficulty: 'medium' },
-  // Row 5: Combat / Elite, 3 nodes (one must be elite)
-  {
-    count: 3,
-    types: (index, _count) => index === 1 ? 'elite' : 'combat',
-    difficulty: 'medium',
-  },
-  // Row 6: Rest / Shop / Event, 2-3 nodes
-  { count: [2, 3], types: ['rest', 'shop', 'event'] },
-  // Row 7: Hard combat, 3 nodes
-  { count: 3, types: ['combat'], difficulty: 'hard' },
-  // Row 8: Combat / Elite, 3 nodes (one must be elite)
-  {
-    count: 3,
-    types: (index, _count) => index === 1 ? 'elite' : 'combat',
-    difficulty: 'hard',
-  },
-  // Row 9: Boss, 1 node
+  // Floor 3: Easy combat + event
+  { count: 3, types: ['combat', 'combat', 'event'], difficulty: 'easy' },
+  // Floor 4: Rest / event breather (no adjacent elite — neutral)
+  { count: [2, 3], types: REST_NEUTRAL },
+  // Floor 5: BUILD always (1/3 of the run)
+  { count: [2, 3], types: ['shop'] },
+  // Floor 6: Medium combat + elite (1 elite of 3)
+  { count: 3, types: ['combat', 'elite', 'combat'], difficulty: 'medium' },
+  // Floor 7: Sandwiched between two elite rows (6 and 8) → rest-heavy
+  { count: [2, 3], types: REST_HEAVY },
+  // Floor 8: Medium combat + elite (2 elites of 3)
+  { count: 3, types: ['elite', 'combat', 'elite'], difficulty: 'medium' },
+  // Floor 9: Adjacent to one elite (after floor 8) → rest-biased
+  { count: [2, 3], types: REST_BIASED },
+  // Floor 10: BUILD always (2/3 of the run)
+  { count: 3, types: ['shop'] },
+  // Floor 11: Hard combat + elite (2 elites of 3)
+  { count: 3, types: ['elite', 'combat', 'elite'], difficulty: 'hard' },
+  // Floor 12: Sandwiched between two elite rows (11 and 13) → rest-heavy
+  { count: [2, 3], types: REST_HEAVY },
+  // Floor 13: Hard combat + elite (2 elites of 3)
+  { count: 3, types: ['elite', 'combat', 'elite'], difficulty: 'hard' },
+  // Floor 14: BUILD always (2 floors before boss)
+  { count: 3, types: ['shop'] },
+  // Floor 15: Rest always (last floor before boss)
+  { count: 3, types: ['rest'] },
+  // Floor 16: Boss
   { count: 1, types: ['boss'] },
 ]
+
+export const TOTAL_FLOORS = ROW_DEFS.length
 
 function shuffleArray<T>(arr: T[]): T[] {
   const copy = [...arr]
@@ -116,7 +129,7 @@ export function generateMap(): GameMap {
   const rowNodes: MapNode[][] = []
 
   // Generate nodes for each row
-  for (let row = 0; row < 10; row++) {
+  for (let row = 0; row < TOTAL_FLOORS; row++) {
     const def = ROW_DEFS[row]
     const count = Array.isArray(def.count)
       ? def.count[0] + Math.floor(Math.random() * (def.count[1] - def.count[0] + 1))
@@ -162,7 +175,7 @@ export function generateMap(): GameMap {
   }
 
   // Generate edges (connect each row to the next)
-  for (let row = 0; row < 9; row++) {
+  for (let row = 0; row < TOTAL_FLOORS - 1; row++) {
     const current = rowNodes[row]
     const next = rowNodes[row + 1]
 

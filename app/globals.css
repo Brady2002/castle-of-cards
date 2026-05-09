@@ -194,15 +194,32 @@ body {
   border: 2px solid #c9a96e;
   border-radius: 14px;
   box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(4px);
 }
 
 /* === Header === */
 .header-bar {
-  background: linear-gradient(135deg, #5d3a1a 0%, #8b5e34 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 224, 160, 0.12), transparent 30%),
+    linear-gradient(135deg, #5d3a1a 0%, #8b5e34 100%);
   border: 2px solid #3d2210;
   border-radius: 14px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 224, 160, 0.25);
+}
+
+/* Stat chip — pill in the right side of the header bar */
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 224, 160, 0.18);
+  border-radius: 14px;
+  font-size: 20px;
+  letter-spacing: 0.3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* === Hand Tray === */
@@ -222,6 +239,334 @@ body {
   border: 3px solid #c9a96e;
   border-radius: 16px;
   box-shadow: 4px 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* === Reward Modal ===
+   Solid dim backdrop (no blur) so the animated combat scene behind doesn't
+   force backdrop-filter to recompute every frame — that was the lag source. */
+.reward-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.reward-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 28px;
+  border-bottom: 2px solid rgba(180, 130, 60, 0.3);
+  border-radius: 14px 14px 0 0;
+  overflow: hidden;
+}
+
+.reward-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 18% 50%, rgba(255, 255, 255, 0.45), transparent 55%);
+}
+
+.reward-header-reward {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #f59e0b 100%);
+}
+
+.reward-header-remove {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 60%, #ef4444 100%);
+}
+
+.reward-header-icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(120, 53, 15, 0.45);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.reward-header-title {
+  position: relative;
+  font-size: 28px;
+  font-weight: 700;
+  color: #4c1d05;
+  line-height: 1.1;
+  letter-spacing: 0.3px;
+}
+
+.reward-header-subtitle {
+  position: relative;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(76, 29, 5, 0.78);
+  margin-top: 4px;
+}
+
+.reward-btn {
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.reward-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.reward-btn-neutral {
+  background: linear-gradient(180deg, #f5e6c8, #e5d4a4);
+  color: #5d3a1a;
+  border-color: #c9a96e;
+}
+
+.reward-btn-neutral:hover {
+  background: linear-gradient(180deg, #fdf6e3, #f0dfb0);
+}
+
+.reward-btn-remove {
+  background: linear-gradient(180deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.reward-btn-remove:hover {
+  background: linear-gradient(180deg, #fef2f2, #fecaca);
+}
+
+/* === Event Screen === */
+.event-description {
+  position: relative;
+  padding: 18px 22px 18px 28px;
+  background: linear-gradient(180deg, rgba(254, 243, 199, 0.5), rgba(253, 230, 138, 0.3));
+  border-left: 4px solid #d8b773;
+  border-radius: 4px 12px 12px 4px;
+  color: #4c1d05;
+  font-size: 18px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.event-description p {
+  margin: 0;
+}
+
+.event-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 2px solid #d8b773;
+  background: linear-gradient(180deg, #fef7e0 0%, #fae3b8 100%);
+  color: #4c1d05;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.event-choice:hover {
+  transform: translateY(-2px);
+  border-color: #b08050;
+  background: linear-gradient(180deg, #fef7e0 0%, #f5cf91 100%);
+  box-shadow:
+    0 6px 14px rgba(120, 80, 40, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.event-choice-label {
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  flex: 1;
+}
+
+.event-choice-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(120, 53, 15, 0.12);
+  color: #78350f;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.event-choice:hover .event-choice-arrow {
+  background: rgba(120, 53, 15, 0.22);
+  transform: translateX(3px);
+}
+
+.event-choice-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
+
+.event-choice-disabled:hover {
+  transform: none;
+  border-color: #d8b773;
+  background: linear-gradient(180deg, #fef7e0 0%, #fae3b8 100%);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.event-result {
+  padding: 20px 24px;
+  border-radius: 14px;
+  border: 2px solid;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.event-result-good {
+  background: linear-gradient(180deg, rgba(220, 252, 231, 0.95), rgba(187, 247, 208, 0.95));
+  border-color: #4ade80;
+  color: #14532d;
+}
+
+.event-result-bad {
+  background: linear-gradient(180deg, rgba(254, 226, 226, 0.95), rgba(254, 202, 202, 0.95));
+  border-color: #f87171;
+  color: #7f1d1d;
+}
+
+.event-result-neutral {
+  background: linear-gradient(180deg, rgba(254, 243, 199, 0.95), rgba(253, 230, 138, 0.95));
+  border-color: #fbbf24;
+  color: #78350f;
+}
+
+/* === Shop / Castle Build === */
+.part-button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 2px solid;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.part-button-available {
+  background: linear-gradient(180deg, #fef7e0 0%, #fae3b8 100%);
+  border-color: #d8b773;
+  cursor: pointer;
+}
+
+.part-button-available:hover {
+  transform: translateY(-2px);
+  border-color: #b08050;
+  background: linear-gradient(180deg, #fef7e0 0%, #f5cf91 100%);
+  box-shadow:
+    0 6px 14px rgba(120, 80, 40, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.part-button-built {
+  background: linear-gradient(180deg, #dcfce7, #bbf7d0);
+  border-color: #4ade80;
+  opacity: 0.75;
+  cursor: default;
+}
+
+.part-button-cant-afford {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.part-button-locked {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
+
+.shop-rest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(253, 246, 227, 0.94), rgba(245, 230, 200, 0.94));
+  border: 2px solid #c9a96e;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.shop-rest-disabled {
+  opacity: 0.55;
+}
+
+.shop-rest-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #d97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* === Debug button — fixed top-right, visually flagged as a dev control === */
+.debug-button {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fca5a5;
+  border: 1px dashed rgba(252, 165, 165, 0.55);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.12s ease, transform 0.12s ease, background 0.12s ease;
+}
+
+.debug-button:hover {
+  opacity: 1;
+  background: rgba(127, 29, 29, 0.92);
+  color: #fee2e2;
+  transform: translateY(-1px);
 }
 
 /* === Castle Part Chips === */
@@ -430,9 +775,9 @@ body {
 
 /* === Castle Tier Row === */
 .castle-tier {
-  min-height: 52px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  min-height: 64px;
+  padding: 6px 10px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.25);
   border: 1px dashed rgba(201, 169, 110, 0.3);
 }
@@ -464,9 +809,9 @@ body {
 .btn-end-turn {
   background: linear-gradient(135deg, #059669, #047857);
   border-color: #065f46;
-  padding: 14px 28px;
-  font-size: 16px;
-  letter-spacing: 0.5px;
+  padding: 22px 44px;
+  font-size: 24px;
+  letter-spacing: 0.7px;
 }
 
 .btn-end-turn:hover {
@@ -483,12 +828,12 @@ body {
   position: relative;
   background: linear-gradient(145deg, rgba(253, 246, 227, 0.95), rgba(245, 230, 200, 0.95));
   border: 2px solid #c9a96e;
-  border-radius: 14px;
-  padding: 14px 18px;
-  min-width: 180px;
-  max-width: 220px;
+  border-radius: 18px;
+  padding: 22px 28px;
+  min-width: 280px;
+  max-width: 340px;
   box-shadow:
-    2px 4px 12px rgba(0, 0, 0, 0.15),
+    2px 4px 14px rgba(0, 0, 0, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transition: all 0.18s ease;
 }
@@ -545,13 +890,13 @@ body {
    to the enemy (visually at the bottom of the stack), with status cards above. */
 .enemy-tooltip {
   position: absolute;
-  bottom: calc(100% + 12px);
+  bottom: calc(100% + 16px);
   left: 50%;
   transform: translateX(-50%);
-  width: 220px;
+  width: 380px;
   display: flex;
   flex-direction: column-reverse;
-  gap: 6px;
+  gap: 10px;
   pointer-events: none;
   z-index: 30;
   opacity: 0;
@@ -563,14 +908,14 @@ body {
 .enemy-tooltip::after {
   content: '';
   position: absolute;
-  bottom: -6px;
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid #1e293b;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #1e293b;
 }
 
 .enemy-card:hover .enemy-tooltip {
@@ -581,26 +926,27 @@ body {
 .tooltip-card {
   background: #1e293b;
   border: 1px solid #475569;
-  border-radius: 6px;
-  padding: 6px 9px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   text-align: left;
 }
 
 .tooltip-card-title {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 9px;
+  font-size: 19px;
   font-weight: 700;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
 }
 
 .tooltip-card-body {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 500;
   color: #e2e8f0;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 .tooltip-accent-attack { color: #fca5a5; }
@@ -620,10 +966,10 @@ body {
 .intent-badge {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 8px;
-  border-radius: 8px;
-  font-size: 12px;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -654,8 +1000,8 @@ body {
 /* === Energy Orb === */
 .energy-orb {
   position: relative;
-  width: 74px;
-  height: 74px;
+  width: 116px;
+  height: 116px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -679,14 +1025,31 @@ body {
 }
 
 .energy-orb-num {
-  font-size: 26px;
+  font-size: 42px;
   line-height: 1;
 }
 
 .energy-orb-max {
-  font-size: 14px;
+  font-size: 22px;
   opacity: 0.7;
-  margin-left: 1px;
+  margin-left: 3px;
+}
+
+/* === Hand cluster — recessed panel that holds energy/end-turn + pile button === */
+.hand-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.18));
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 224, 160, 0.08);
 }
 
 /* === Pile buttons (draw / discard) === */
@@ -696,12 +1059,12 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  width: 64px;
-  padding: 6px 4px 4px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55));
+  gap: 4px;
+  width: 116px;
+  padding: 14px 10px 10px;
+  background: linear-gradient(180deg, rgba(255, 224, 160, 0.08), rgba(0, 0, 0, 0.25));
   border: 2px solid rgba(255, 224, 160, 0.35);
-  border-radius: 12px;
+  border-radius: 16px;
   color: #fef3c7;
   cursor: pointer;
   transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
@@ -710,7 +1073,39 @@ body {
 .pile-button:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 224, 160, 0.7);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65));
+  background: linear-gradient(180deg, rgba(255, 224, 160, 0.16), rgba(0, 0, 0, 0.3));
+}
+
+/* End turn — animated dotted "Waiting" placeholder used during enemy turn */
+.end-turn-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 40px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: rgba(254, 243, 199, 0.65);
+  border: 2px dashed rgba(254, 243, 199, 0.25);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.end-turn-waiting .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(254, 243, 199, 0.7);
+  animation: waiting-pulse 1.4s ease-in-out infinite;
+}
+
+.end-turn-waiting .dot:nth-child(2) { animation-delay: 0.2s; }
+.end-turn-waiting .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes waiting-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1.1); }
 }
 
 .pile-icon {
@@ -721,16 +1116,16 @@ body {
 }
 
 .pile-label {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
+  letter-spacing: 0.8px;
+  margin-top: 5px;
   opacity: 0.85;
 }
 
 .pile-count {
-  font-size: 16px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1;
 }
@@ -739,15 +1134,15 @@ body {
 .map-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 12px;
+  padding: 16px 24px;
   background: linear-gradient(135deg, rgba(254, 243, 199, 0.18), rgba(254, 243, 199, 0.05));
   border: 1.5px solid rgba(254, 243, 199, 0.45);
-  border-radius: 10px;
+  border-radius: 14px;
   color: #fef3c7;
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.12s ease;

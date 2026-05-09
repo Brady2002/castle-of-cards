@@ -18,16 +18,16 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
 
   return (
     <div className="w-full">
-      <div className="hand-tray flex items-end gap-4 px-5 pt-5 pb-4">
-        {/* === Left corner: energy orb + draw pile === */}
-        <div className="flex flex-col items-center gap-3 shrink-0">
+      <div className="hand-tray flex items-stretch gap-7 px-9 pt-8 pb-8">
+        {/* === Left cluster: energy orb + draw pile === */}
+        <div className="hand-cluster shrink-0">
           <EnergyOrb energy={state.energy} max={state.maxEnergy} />
           <PileButton
             label="Draw"
             count={state.deck.length}
             onClick={onPeekDraw}
             icon={
-              <svg width="22" height="22" viewBox="0 0 24 24">
+              <svg width="40" height="40" viewBox="0 0 24 24">
                 <rect x="4" y="3" width="13" height="17" rx="2" fill="#1e3a8a" stroke="#1e293b" strokeWidth="1.5" />
                 <rect x="7" y="6" width="13" height="17" rx="2" fill="#3b82f6" stroke="#1e293b" strokeWidth="1.5" />
                 <line x1="10" y1="11" x2="17" y2="11" stroke="#dbeafe" strokeWidth="1.2" />
@@ -38,7 +38,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
         </div>
 
         {/* === Cards === */}
-        <div className="flex-1 flex items-end justify-center gap-3 flex-wrap min-h-[210px]">
+        <div className="flex-1 flex items-end justify-center gap-6 flex-wrap min-h-[210px] py-2">
           {state.hand.length === 0 && (
             <span className="text-amber-200/70 italic text-sm py-10">No cards in hand</span>
           )}
@@ -58,8 +58,8 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
           })}
         </div>
 
-        {/* === Right corner: end turn + discard pile === */}
-        <div className="flex flex-col items-center gap-3 shrink-0">
+        {/* === Right cluster: end turn + discard pile === */}
+        <div className="hand-cluster shrink-0">
           {isPlayerTurn ? (
             <button
               className="btn-primary btn-end-turn"
@@ -68,8 +68,11 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
               End Turn
             </button>
           ) : (
-            <div className="px-7 py-3.5 text-amber-200/60 text-sm font-bold border-2 border-amber-300/20 rounded-xl">
-              Waiting...
+            <div className="end-turn-waiting">
+              <span className="dot" />
+              <span className="dot" />
+              <span className="dot" />
+              <span>Waiting</span>
             </div>
           )}
           <PileButton
@@ -77,7 +80,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
             count={state.discard.length}
             onClick={onPeekDiscard}
             icon={
-              <svg width="22" height="22" viewBox="0 0 24 24">
+              <svg width="40" height="40" viewBox="0 0 24 24">
                 <rect x="5" y="4" width="14" height="17" rx="2" fill="#475569" stroke="#1e293b" strokeWidth="1.5" />
                 <line x1="9" y1="9" x2="15" y2="9" stroke="#cbd5e1" strokeWidth="1.2" />
                 <line x1="9" y1="13" x2="15" y2="13" stroke="#cbd5e1" strokeWidth="1.2" />
@@ -94,7 +97,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard }: Pro
 function EnergyOrb({ energy, max }: { energy: number; max: number }) {
   return (
     <div className="energy-orb" aria-label={`Energy ${energy} of ${max}`}>
-      <svg viewBox="0 0 80 80" width="74" height="74">
+      <svg viewBox="0 0 80 80" width="116" height="116">
         <defs>
           <radialGradient id="energy-glow" cx="35%" cy="30%" r="65%">
             <stop offset="0%" stopColor="#fef3c7" />

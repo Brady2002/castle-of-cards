@@ -2,6 +2,7 @@
 
 import type { GameState } from './types'
 import type { MapNode, MapNodeType } from './map'
+import { TOTAL_FLOORS } from './map'
 
 type Props = {
   state: GameState
@@ -12,7 +13,7 @@ const NODE_ICONS: Record<MapNodeType, string> = {
   combat: '⚔️',
   elite: '💀',
   rest: '🏕️',
-  shop: '🏠',
+  shop: '🏰',
   event: '❓',
   boss: '👑',
 }
@@ -32,10 +33,10 @@ export default function MapPeekModal({ state, onClose }: Props) {
   const nodeRadius = 22
   const maxCols = 4
   const svgWidth = maxCols * colWidth + 40
-  const svgHeight = 10 * rowHeight + 40
+  const svgHeight = TOTAL_FLOORS * rowHeight + 40
 
   const rows: MapNode[][] = []
-  for (let r = 0; r < 10; r++) {
+  for (let r = 0; r < TOTAL_FLOORS; r++) {
     rows.push(state.map.nodes.filter(n => n.row === r))
   }
 
@@ -54,14 +55,18 @@ export default function MapPeekModal({ state, onClose }: Props) {
           <div>
             <h2 className="text-xl font-bold text-amber-900">Your Path</h2>
             <div className="text-[11px] text-amber-700/80 font-bold tracking-wide uppercase">
-              Floor {Math.min(10, state.encounter)} — read only
+              Floor {Math.min(TOTAL_FLOORS, state.encounter)}
             </div>
           </div>
           <button
-            className="px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-700 text-amber-900 hover:bg-amber-100 cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-amber-700/70 text-amber-900 hover:bg-amber-100 cursor-pointer transition-colors"
             onClick={onClose}
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M3 3 L13 13 M13 3 L3 13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
 

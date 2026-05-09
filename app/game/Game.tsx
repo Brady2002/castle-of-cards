@@ -160,6 +160,40 @@ export default function Game() {
       {state.phase === 'card_reward' && (
         <RewardModal state={state} dispatch={dispatch} />
       )}
+
+      {/* Debug: instakill all enemies */}
+      <button
+        className="debug-button fixed top-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer"
+        onClick={() => dispatch({ type: 'debug_kill_all' })}
+        title="Debug: instakill all enemies"
+        style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          color: '#fca5a5',
+          border: '1px dashed rgba(252, 165, 165, 0.6)',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: '0.6px',
+          opacity: 0.65,
+          transition: 'opacity 0.12s ease, background 0.12s ease, transform 0.12s ease',
+        }}
+        onMouseEnter={e => {
+          const el = e.currentTarget
+          el.style.opacity = '1'
+          el.style.background = 'rgba(127, 29, 29, 0.92)'
+          el.style.color = '#fee2e2'
+          el.style.transform = 'translateY(-1px)'
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget
+          el.style.opacity = '0.65'
+          el.style.background = 'rgba(15, 23, 42, 0.85)'
+          el.style.color = '#fca5a5'
+          el.style.transform = 'translateY(0)'
+        }}
+      >
+        <span aria-hidden>☠</span>
+        <span>KILL ALL</span>
+      </button>
     </div>
   )
 }

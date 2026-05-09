@@ -5,6 +5,7 @@ import type { GameAction } from './logic'
 import { REST_COST, REST_HEAL } from './logic'
 import { CASTLE_PART_DEFS, ALL_PARTS, hasPrereq } from './castleParts'
 import CastleView from './CastleView'
+import CombatHeader from './CombatHeader'
 
 type Props = {
   state: GameState
@@ -12,48 +13,35 @@ type Props = {
 }
 
 export default function CastleBuildScreen({ state, dispatch }: Props) {
-  const hpPct = (state.playerHp / state.playerMaxHp) * 100
-  const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#fbbf24' : '#f87171'
+  const canRest = state.sandDollars >= REST_COST && state.playerHp < state.playerMaxHp
 
   return (
-    <div className="min-h-screen game-bg flex flex-col items-center px-4 py-6 gap-4">
+    <div className="min-h-screen game-bg flex flex-col items-center px-6 py-7 gap-6">
       {/* Header */}
-      <div className="w-full max-w-6xl">
-        <div className="header-bar px-6 py-3 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-amber-100">Build Your Castle</h2>
-          <div className="flex gap-4 items-center">
-            <div className="flex items-center gap-2 text-white text-sm">
-              <svg width="14" height="14" viewBox="0 0 16 16">
-                <path d="M8 14 Q1 8 1 5 Q1 2 4 2 Q6 2 8 5 Q10 2 12 2 Q15 2 15 5 Q15 8 8 14Z" fill={hpColor} />
-              </svg>
-              {state.playerHp}/{state.playerMaxHp}
-            </div>
-            <div className="flex items-center gap-1.5 text-amber-200 text-sm font-bold">
-              <svg width="14" height="14" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="6" fill="#fbbf24" stroke="#d97706" strokeWidth="1.5" />
-                <text x="8" y="11" textAnchor="middle" fontSize="8" fill="#78350f" fontWeight="bold">$</text>
-              </svg>
-              {state.sandDollars}
-            </div>
-            <div className="text-amber-100 bg-amber-900/40 px-3 py-1 rounded-lg text-sm font-bold">
-              Score: {state.castleScore}/50
-            </div>
-          </div>
-        </div>
+      <div className="w-full flex justify-center">
+        <CombatHeader
+          encounter={state.encounter}
+          playerHp={state.playerHp}
+          playerMaxHp={state.playerMaxHp}
+          sandDollars={state.sandDollars}
+          castleScore={state.castleScore}
+        />
       </div>
 
-      <div className="flex gap-6 w-full max-w-6xl flex-1 min-h-0">
+      <div className="flex gap-7 w-full max-w-7xl flex-1 min-h-0">
         {/* Castle view */}
         <CastleView castle={state.castle} />
 
         {/* Shop */}
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="panel p-5 flex-1">
-            <div className="flex items-baseline justify-between mb-3">
-              <div className="font-bold text-amber-900 text-lg">Castle Parts</div>
-              <div className="text-xs text-amber-700/70 font-bold">{state.castle.length}/{ALL_PARTS.length} built</div>
+        <div className="flex-1 flex flex-col gap-5 min-w-0">
+          <div className="panel p-7 flex-1">
+            <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-amber-700/20">
+              <div className="font-bold text-amber-900 text-2xl">Castle Parts</div>
+              <div className="text-sm text-amber-700/80 font-bold tracking-wide uppercase">
+                {state.castle.length}/{ALL_PARTS.length} built
+              </div>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {ALL_PARTS.map(partType => (
                 <PartButton
                   key={partType}
@@ -66,18 +54,24 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
           </div>
 
           {/* Rest */}
-          <div className="panel p-3 flex items-center justify-between">
-            <div>
-              <span className="font-bold text-amber-900 text-sm">Rest</span>
-              <span className="text-gray-500 text-xs ml-2">Heal {REST_HEAL} HP for ${REST_COST}</span>
+          <div className={`shop-rest ${canRest ? '' : 'shop-rest-disabled'}`}>
+            <div className="flex items-center gap-4 flex-1">
+              <div className="shop-rest-icon">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <path d="M5 22 L5 16 Q5 10 12 10 L20 10 Q27 10 27 16 L27 22" fill="#fde68a" stroke="#a16207" strokeWidth="2" strokeLinejoin="round" />
+                  <rect x="3" y="22" width="26" height="6" rx="1.5" fill="#a16207" stroke="#78350f" strokeWidth="1.5" />
+                  <path d="M9 16 Q9 13 13 13 L19 13 Q23 13 23 16 L23 19 L9 19 Z" fill="#fff" stroke="#a16207" strokeWidth="1" />
+                </svg>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-amber-900 text-xl">Rest</span>
+                <span className="text-amber-800/75 text-base">Heal {REST_HEAL} HP for ${REST_COST}</span>
+              </div>
             </div>
             <button
-              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-                state.sandDollars >= REST_COST && state.playerHp < state.playerMaxHp
-                  ? 'bg-green-100 border-2 border-green-400 text-green-800 hover:bg-green-200 cursor-pointer'
-                  : 'bg-gray-100 border-2 border-gray-300 text-gray-400'
-              }`}
-              disabled={state.sandDollars < REST_COST || state.playerHp >= state.playerMaxHp}
+              className="reward-btn reward-btn-neutral"
+              style={canRest ? {} : { opacity: 0.5, cursor: 'not-allowed' }}
+              disabled={!canRest}
               onClick={() => dispatch({ type: 'rest' })}
             >
               Rest (${REST_COST})
@@ -86,7 +80,7 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
 
           {/* Continue */}
           <button
-            className="btn-primary w-full text-center text-lg py-3"
+            className="reward-btn reward-btn-neutral text-xl py-5"
             onClick={() => dispatch({ type: 'continue_from_build' })}
           >
             Back to Map
@@ -112,38 +106,38 @@ function PartButton({ partType, state, dispatch }: {
   let statusLabel: string
 
   if (owned) {
-    className = 'bg-green-50 border-green-300 opacity-60'
+    className = 'part-button-built'
     statusLabel = 'Built'
   } else if (!meetsPrereq) {
-    className = 'bg-gray-100 border-gray-200 opacity-40'
+    className = 'part-button-locked'
     statusLabel = `Needs ${def.prereq}`
   } else if (!canAfford) {
-    className = 'bg-gray-50 border-gray-200 opacity-50'
+    className = 'part-button-cant-afford'
     statusLabel = `$${def.cost}`
   } else {
-    className = 'bg-amber-50 border-amber-300 hover:border-amber-500 hover:bg-amber-100 cursor-pointer'
+    className = 'part-button-available'
     statusLabel = `$${def.cost}`
   }
 
   return (
     <button
-      className={`p-3 rounded-lg border-2 text-left transition-all ${className}`}
+      className={`part-button ${className}`}
       disabled={!canBuild}
       onClick={() => dispatch({ type: 'build_part', part: partType })}
     >
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-bold text-sm capitalize text-gray-800">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-bold text-lg capitalize text-gray-900">
           {owned ? '✓ ' : ''}{partType}
         </span>
-        <span className={`text-xs font-bold ${!meetsPrereq && !owned ? 'text-gray-400' : 'text-amber-700'}`}>
+        <span className={`text-sm font-bold ${!meetsPrereq && !owned ? 'text-gray-400' : 'text-amber-700'}`}>
           {statusLabel}
         </span>
       </div>
-      <div className="text-[10px] text-gray-500">{def.bonus}</div>
+      <div className="text-sm text-gray-600 leading-snug mb-2.5">{def.bonus}</div>
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-amber-600">+{def.score} score</span>
+        <span className="text-sm font-bold text-amber-600">+{def.score} score</span>
         {!owned && !meetsPrereq && (
-          <svg width="12" height="12" viewBox="0 0 16 16" className="opacity-40">
+          <svg width="16" height="16" viewBox="0 0 16 16" className="opacity-50">
             <rect x="5" y="8" width="6" height="6" rx="1" fill="#999" />
             <path d="M6 8 L6 6 Q6 3 8 3 Q10 3 10 6 L10 8" fill="none" stroke="#999" strokeWidth="1.5" />
           </svg>

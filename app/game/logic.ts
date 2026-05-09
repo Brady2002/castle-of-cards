@@ -203,6 +203,7 @@ export type GameAction =
   | { type: 'event_remove_card'; cardId: string }
   | { type: 'skip_event_remove' }
   | { type: 'restart' }
+  | { type: 'debug_kill_all' }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -244,15 +245,40 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return skipEventRemove(state)
     case 'restart':
       return createGame()
+    case 'debug_kill_all':
+      return debugKillAll(state)
     default:
       return state
+  }
+}
+
+function debugKillAll(state: GameState): GameState {
+  const inCombat =
+    state.phase === 'combat_player_turn' ||
+    state.phase === 'targeting' ||
+    state.phase === 'combat_enemy_turn'
+  if (!inCombat) return state
+  const currentNode = state.currentNodeId ? getNode(state.map, state.currentNodeId) : null
+  const reward = currentNode
+    ? getSandDollarReward(currentNode.difficulty, currentNode.type)
+    : 0
+  return {
+    ...state,
+    phase: 'combat_victory',
+    enemies: [],
+    selectedCardId: null,
+    sandDollarsEarned: reward,
   }
 }
 
 // === Select Card (for targeting) ===
 
 function selectCard(state: GameState, cardId: string): GameState {
-  if (state.phase !== 'combat_player_turn') return state
+  // Clicking the currently-selected card while targeting cancels selection.
+  if (state.phase === 'targeting' && state.selectedCardId === cardId) {
+    return { ...state, phase: 'combat_player_turn', selectedCardId: null }
+  }
+  if (state.phase !== 'combat_player_turn' && state.phase !== 'targeting') return state
   const card = state.hand.find(c => c.id === cardId)
   if (!card || !canPlayCard(state, card)) return state
 
@@ -260,7 +286,7 @@ function selectCard(state: GameState, cardId: string): GameState {
     return { ...state, phase: 'targeting', selectedCardId: cardId }
   }
 
-  // Non-targeted card: play immediately
+  // Non-targeted card: play immediately (clears any previous targeting via playCard).
   return playCard(state, card, undefined)
 }
 

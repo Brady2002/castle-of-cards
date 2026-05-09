@@ -28,37 +28,37 @@ export default function CastleView({ castle }: Props) {
   }
 
   return (
-    <div className="panel min-w-[280px] w-[320px] p-5 flex flex-col">
-      <div className="font-bold text-amber-900 text-base mb-3">Your Castle</div>
+    <div className="panel min-w-[340px] w-[380px] p-6 flex flex-col">
+      <div className="font-bold text-amber-900 text-2xl mb-4 pb-2 border-b border-amber-700/20">Your Castle</div>
 
       {/* Render tiers top-to-bottom (3→0) so it looks like a castle */}
-      <div className="flex flex-col gap-1.5 flex-1">
+      <div className="flex flex-col gap-2 flex-1">
         {[3, 2, 1, 0].map(tier => {
           const parts = tiers[tier]
           const hasParts = parts.length > 0
 
           return (
             <div key={tier} className={`castle-tier ${hasParts ? 'has-parts' : ''}`}>
-              <div className="text-[9px] text-amber-700/50 font-bold uppercase tracking-wider mb-1">
+              <div className="text-[12px] text-amber-700/65 font-bold uppercase tracking-wider mb-1.5">
                 {TIER_LABELS[tier]}
               </div>
               {hasParts ? (
-                <div className="flex gap-1.5 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {parts.map((partType, i) => {
                     const def = CASTLE_PART_DEFS[partType]
                     const style = PART_STYLES[partType]
                     return (
                       <div
                         key={`${partType}-${i}`}
-                        className="castle-part px-2.5 py-1.5 flex items-center gap-2"
+                        className="castle-part px-3 py-2 flex items-center gap-2.5"
                         style={{ background: style.bg, borderColor: style.border }}
                       >
                         <PartIcon type={partType} />
                         <div className="flex flex-col">
-                          <span className="font-bold text-[11px] capitalize" style={{ color: style.text }}>
+                          <span className="font-bold text-[14px] capitalize" style={{ color: style.text }}>
                             {partType}
                           </span>
-                          <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                          <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
                             +{def.score} · {def.bonus}
                           </span>
                         </div>
@@ -67,7 +67,7 @@ export default function CastleView({ castle }: Props) {
                   })}
                 </div>
               ) : (
-                <div className="text-[10px] text-gray-400/60 italic py-0.5 px-1">—</div>
+                <div className="text-[13px] text-gray-400/70 italic py-1 px-1.5">—</div>
               )}
             </div>
           )
