@@ -136,17 +136,6 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
     effects: [{ kind: 'draw', count: 2 }],
     description: 'Draw 2 cards.',
   },
-  'Shore Up': {
-    name: 'Shore Up',
-    type: 'skill',
-    rarity: 'uncommon',
-    energyCost: 0,
-    effects: [
-      { kind: 'block', amount: 3 },
-      { kind: 'energy', amount: 1 },
-    ],
-    description: 'Gain 3 Block. Gain 1 Energy.',
-  },
 
   // === Rare Attacks ===
   'Tidal Wave': {
@@ -157,27 +146,8 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
     effects: [{ kind: 'damage', amount: 16, target: 'all' }],
     description: 'Deal 16 damage to ALL enemies.',
   },
-  'Sunstroke': {
-    name: 'Sunstroke',
-    type: 'attack',
-    rarity: 'rare',
-    energyCost: 2,
-    effects: [
-      { kind: 'damage', amount: 10, target: 'single' },
-      { kind: 'apply_status', status: 'vulnerable', amount: 2, target: 'single' },
-    ],
-    description: 'Deal 10 damage. Apply 2 Vulnerable.',
-  },
 
   // === Rare Skills ===
-  'Fortress of Sand': {
-    name: 'Fortress of Sand',
-    type: 'skill',
-    rarity: 'rare',
-    energyCost: 3,
-    effects: [{ kind: 'block', amount: 22 }],
-    description: 'Gain 22 Block.',
-  },
   'Second Wind': {
     name: 'Second Wind',
     type: 'skill',
@@ -190,28 +160,7 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
     description: 'Draw 3 cards. Gain 1 Energy.',
   },
 
-  // === New: Common ===
-  'Sea Spray': {
-    name: 'Sea Spray',
-    type: 'skill',
-    rarity: 'common',
-    energyCost: 1,
-    effects: [
-      { kind: 'block', amount: 4 },
-      { kind: 'apply_status', status: 'weak', amount: 1, target: 'all' },
-    ],
-    description: 'Gain 4 Block. Apply 1 Weak to ALL.',
-  },
-
   // === New: Uncommon ===
-  'Sun Bath': {
-    name: 'Sun Bath',
-    type: 'skill',
-    rarity: 'uncommon',
-    energyCost: 1,
-    effects: [{ kind: 'heal', amount: 7 }],
-    description: 'Heal 7 HP.',
-  },
   'Boulder Bash': {
     name: 'Boulder Bash',
     type: 'attack',
@@ -222,25 +171,6 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
       { kind: 'block', amount: 8 },
     ],
     description: 'Deal 8 damage. Gain 8 Block.',
-  },
-  'Castle Doctrine': {
-    name: 'Castle Doctrine',
-    type: 'attack',
-    rarity: 'uncommon',
-    energyCost: 1,
-    effects: [{ kind: 'damage_eq_block', target: 'single' }],
-    description: 'Deal damage equal to your current Block.',
-  },
-  'Glass Shards': {
-    name: 'Glass Shards',
-    type: 'attack',
-    rarity: 'uncommon',
-    energyCost: 0,
-    effects: [
-      { kind: 'damage', amount: 4, target: 'single' },
-      { kind: 'apply_status', status: 'weak', amount: 1, target: 'single' },
-    ],
-    description: 'Deal 4 damage. Apply 1 Weak.',
   },
   'Adrenaline Rush': {
     name: 'Adrenaline Rush',
@@ -266,14 +196,6 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
   },
 
   // === New: Rare ===
-  'Sandcastle Architect': {
-    name: 'Sandcastle Architect',
-    type: 'skill',
-    rarity: 'rare',
-    energyCost: 2,
-    effects: [{ kind: 'gain_status', status: 'strength', amount: 3 }],
-    description: 'Gain 3 Strength.',
-  },
   'Wrecking Wave': {
     name: 'Wrecking Wave',
     type: 'attack',
@@ -284,17 +206,6 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
       { kind: 'apply_status', status: 'vulnerable', amount: 1, target: 'all' },
     ],
     description: 'Deal 12 damage to ALL. Apply 1 Vulnerable to ALL.',
-  },
-  'Bulwark': {
-    name: 'Bulwark',
-    type: 'skill',
-    rarity: 'rare',
-    energyCost: 2,
-    effects: [
-      { kind: 'block', amount: 12 },
-      { kind: 'gain_status', status: 'strength', amount: 2 },
-    ],
-    description: 'Gain 12 Block. Gain 2 Strength.',
   },
   'Riptide Coil': {
     name: 'Riptide Coil',
@@ -310,24 +221,6 @@ export const CARD_DEFS: Record<string, CardDefinition> = {
   },
 
   // === Powers === (exhaust on play; trigger fires at start of each turn)
-  'Lifeguard Stance': {
-    name: 'Lifeguard Stance',
-    type: 'power',
-    rarity: 'uncommon',
-    energyCost: 1,
-    effects: [],
-    powerTrigger: { kind: 'turn_start_block', amount: 4 },
-    description: 'At the start of each turn, gain 4 Block.',
-  },
-  'Driftwood Discipline': {
-    name: 'Driftwood Discipline',
-    type: 'power',
-    rarity: 'uncommon',
-    energyCost: 1,
-    effects: [],
-    powerTrigger: { kind: 'turn_start_draw', count: 1 },
-    description: 'At the start of each turn, draw 1 extra card.',
-  },
   'Tide Charge': {
     name: 'Tide Charge',
     type: 'power',

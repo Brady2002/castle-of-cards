@@ -2,6 +2,7 @@
 
 import type { MapNodeType } from './map'
 import { TOTAL_FLOORS } from './map'
+import SandDollarIcon from './SandDollarIcon'
 
 type Props = {
   encounter: number
@@ -69,12 +70,7 @@ export default function CombatHeader({
           />
           <StatChip
             color="gold"
-            icon={
-              <svg width="28" height="28" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="6" fill="#fbbf24" stroke="#d97706" strokeWidth="1.5" />
-                <text x="8" y="11" textAnchor="middle" fontSize="8" fill="#78350f" fontWeight="bold">$</text>
-              </svg>
-            }
+            icon={<SandDollarIcon size={28} />}
             value={String(sandDollars)}
           />
           <StatChip

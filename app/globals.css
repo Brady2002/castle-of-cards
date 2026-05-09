@@ -1243,3 +1243,666 @@ body.dragging-card * {
   transform: translateY(-4px) scale(1.03);
   transition: transform 0.12s ease-out, filter 0.12s ease-out;
 }
+
+/* === Victory Modal ===
+   Celebratory beach-themed modal: golden rays radiate behind a starfish
+   trophy, sparkles drift, and the reward + CTA are oversized for impact. */
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.85));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 16px;
+  animation: victory-fade 0.35s ease-out both;
+}
+
+.victory-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  padding: 44px 36px 36px;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(254, 243, 199, 0.75), transparent 65%),
+    linear-gradient(180deg, #fef7e0 0%, #fde68a 60%, #fbbf24 100%);
+  border: 3px solid #b45309;
+  box-shadow:
+    0 0 0 4px rgba(251, 191, 36, 0.35),
+    0 24px 60px rgba(146, 64, 14, 0.45),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+  animation: victory-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.victory-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.victory-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  transform: translate(-50%, -55%);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+  animation: victory-rays-spin 24s linear infinite;
+}
+
+@keyframes victory-rays-spin {
+  from { transform: translate(-50%, -55%) rotate(0deg); }
+  to   { transform: translate(-50%, -55%) rotate(360deg); }
+}
+
+.victory-trophy-wrap {
+  filter: drop-shadow(0 8px 14px rgba(120, 53, 15, 0.45));
+  animation: victory-trophy-bob 3.6s ease-in-out infinite;
+  margin-bottom: 4px;
+}
+
+@keyframes victory-trophy-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.victory-title {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  line-height: 1;
+  color: #7c2d12;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 0 rgba(120, 53, 15, 0.18),
+    0 8px 18px rgba(146, 64, 14, 0.45);
+}
+
+.victory-subtitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(120, 53, 15, 0.85);
+  letter-spacing: 0.4px;
+  font-style: italic;
+}
+
+.victory-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(254, 243, 199, 0.55));
+  border: 2px solid rgba(180, 83, 9, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 4px 14px rgba(146, 64, 14, 0.2);
+}
+
+.victory-reward-amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: #7c2d12;
+  line-height: 1;
+}
+
+.victory-reward-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(120, 53, 15, 0.8);
+  letter-spacing: 0.3px;
+}
+
+.victory-cta {
+  margin-top: 14px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 28px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #fff8e1;
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 60%, #14532d 100%);
+  border: 2px solid #14532d;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 12px rgba(20, 83, 45, 0.45);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.victory-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 60%, #166534 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 18px rgba(20, 83, 45, 0.5);
+}
+
+.victory-cta:active {
+  transform: translateY(0);
+}
+
+.victory-sparkle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(254, 243, 199, 0.8));
+  animation: victory-sparkle 2.6s ease-in-out infinite;
+}
+
+@keyframes victory-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  50%      { opacity: 1; transform: scale(1.15) rotate(180deg); }
+}
+
+@keyframes victory-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes victory-pop {
+  0%   { opacity: 0; transform: scale(0.6) translateY(20px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* === Game Over Screen (final win / lose) === */
+.gameover-screen {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.gameover-win {
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(254, 243, 199, 0.6), transparent 60%),
+    radial-gradient(circle at 50% 18%, rgba(253, 224, 71, 0.55) 0%, transparent 45%),
+    linear-gradient(180deg, #6fb8d6 0%, #8fcde0 22%, #ead9b3 60%, #f5e9cc 100%);
+}
+
+.gameover-lose {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(15, 23, 42, 0.85), transparent 70%),
+    linear-gradient(180deg, #1e293b 0%, #1e3a5f 55%, #0f172a 100%);
+}
+
+/* Card */
+.gameover-card {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 480px;
+  padding: 36px 32px 28px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  animation: gameover-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  overflow: hidden;
+}
+
+.gameover-win .gameover-card {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(254, 243, 199, 0.85), transparent 65%),
+    linear-gradient(180deg, #fef7e0 0%, #fde68a 70%, #fbbf24 100%);
+  border: 3px solid #b45309;
+  box-shadow:
+    0 0 0 4px rgba(251, 191, 36, 0.4),
+    0 24px 60px rgba(146, 64, 14, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+
+.gameover-lose .gameover-card {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(96, 165, 250, 0.18), transparent 60%),
+    linear-gradient(180deg, #1f2937 0%, #0f172a 100%);
+  border: 3px solid #1e3a5f;
+  box-shadow:
+    0 0 0 4px rgba(59, 130, 246, 0.18),
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
+}
+
+@keyframes gameover-pop {
+  0%   { opacity: 0; transform: scale(0.7) translateY(24px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Hero illustration */
+.gameover-hero {
+  position: relative;
+  z-index: 2;
+  animation: gameover-hero-bob 4s ease-in-out infinite;
+}
+
+.gameover-win .gameover-hero {
+  filter: drop-shadow(0 10px 18px rgba(120, 53, 15, 0.45));
+}
+
+.gameover-lose .gameover-hero {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+  animation: gameover-hero-sway 5s ease-in-out infinite;
+}
+
+@keyframes gameover-hero-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes gameover-hero-sway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50%      { transform: rotate(1.5deg); }
+}
+
+/* Waving flag (win castle) */
+.gameover-flag {
+  transform-origin: 60px 16px;
+  animation: gameover-flag-wave 2.4s ease-in-out infinite;
+}
+
+@keyframes gameover-flag-wave {
+  0%, 100% { transform: skewY(0deg) scaleX(1); }
+  50%      { transform: skewY(-6deg) scaleX(0.96); }
+}
+
+/* Title */
+.gameover-title {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  line-height: 1;
+}
+
+.gameover-win .gameover-title {
+  color: #7c2d12;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 0 rgba(120, 53, 15, 0.18),
+    0 8px 18px rgba(146, 64, 14, 0.4);
+}
+
+.gameover-lose .gameover-title {
+  color: #cbd5e1;
+  text-shadow:
+    0 2px 0 rgba(15, 23, 42, 0.55),
+    0 8px 24px rgba(15, 23, 42, 0.7);
+}
+
+/* Subtitle */
+.gameover-subtitle {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0.3px;
+  max-width: 340px;
+}
+
+.gameover-win .gameover-subtitle { color: rgba(120, 53, 15, 0.9); }
+.gameover-lose .gameover-subtitle { color: rgba(148, 163, 184, 0.95); }
+
+/* Hero stat (Castle Score) */
+.gameover-hero-stat {
+  position: relative;
+  z-index: 2;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.gameover-win .gameover-hero-stat {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(254, 243, 199, 0.55));
+  border: 2px solid rgba(180, 83, 9, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 4px 14px rgba(146, 64, 14, 0.18);
+}
+
+.gameover-lose .gameover-hero-stat {
+  background: rgba(15, 23, 42, 0.45);
+  border: 2px solid rgba(96, 165, 250, 0.25);
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.15);
+}
+
+.gameover-hero-stat-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  opacity: 0.75;
+}
+
+.gameover-win .gameover-hero-stat-label { color: #7c2d12; }
+.gameover-lose .gameover-hero-stat-label { color: #94a3b8; }
+
+.gameover-hero-stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1;
+}
+
+.gameover-hero-stat-num {
+  font-size: 44px;
+  font-weight: 800;
+}
+
+.gameover-hero-stat-of {
+  font-size: 20px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.gameover-win .gameover-hero-stat-num { color: #7c2d12; }
+.gameover-win .gameover-hero-stat-of  { color: rgba(120, 53, 15, 0.7); }
+.gameover-lose .gameover-hero-stat-num { color: #e2e8f0; }
+.gameover-lose .gameover-hero-stat-of  { color: rgba(148, 163, 184, 0.7); }
+
+.gameover-hero-stat-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.gameover-win .gameover-hero-stat-bar  { background: rgba(120, 53, 15, 0.18); }
+.gameover-lose .gameover-hero-stat-bar { background: rgba(148, 163, 184, 0.18); }
+
+.gameover-hero-stat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease-out;
+  animation: gameover-bar-grow 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gameover-win .gameover-hero-stat-bar-fill {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b, #d97706);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+}
+
+.gameover-lose .gameover-hero-stat-bar-fill {
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
+}
+
+@keyframes gameover-bar-grow {
+  from { transform: scaleX(0); transform-origin: left center; }
+  to   { transform: scaleX(1); transform-origin: left center; }
+}
+
+/* Stat grid */
+.gameover-stats {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.gameover-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.gameover-win .gameover-stat {
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(180, 83, 9, 0.3);
+}
+
+.gameover-lose .gameover-stat {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+
+.gameover-stat-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.gameover-win .gameover-stat-icon {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(180, 83, 9, 0.3);
+}
+
+.gameover-lose .gameover-stat-icon {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.gameover-stat-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.gameover-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.72;
+}
+
+.gameover-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.gameover-win .gameover-stat-label { color: #7c2d12; }
+.gameover-win .gameover-stat-value { color: #4c1d05; }
+.gameover-lose .gameover-stat-label { color: #94a3b8; }
+.gameover-lose .gameover-stat-value { color: #f1f5f9; }
+
+/* CTA */
+.gameover-cta {
+  position: relative;
+  z-index: 2;
+  margin-top: 12px;
+  width: 100%;
+  max-width: 320px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #fff8e1;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.gameover-win .gameover-cta {
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 60%, #14532d 100%);
+  border: 2px solid #14532d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 12px rgba(20, 83, 45, 0.5);
+}
+
+.gameover-win .gameover-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 60%, #166534 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 18px rgba(20, 83, 45, 0.6);
+}
+
+.gameover-lose .gameover-cta {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 60%, #1d4ed8 100%);
+  border: 2px solid #1e3a8a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 4px 12px rgba(30, 64, 175, 0.55);
+}
+
+.gameover-lose .gameover-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 60%, #2563eb 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 8px 18px rgba(30, 64, 175, 0.65);
+}
+
+.gameover-cta:active { transform: translateY(0); }
+
+/* Sun rays (win) */
+.gameover-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1100px;
+  height: 1100px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.55;
+  animation: gameover-rays-spin 32s linear infinite;
+}
+
+@keyframes gameover-rays-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Sparkles inside the win card */
+.gameover-sparkle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(254, 243, 199, 0.85));
+  animation: gameover-sparkle 2.6s ease-in-out infinite;
+}
+
+@keyframes gameover-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  50%      { opacity: 1; transform: scale(1.15) rotate(180deg); }
+}
+
+/* Confetti (win) — falls behind the card */
+.gameover-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.gameover-confetti-piece {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: gameover-confetti-fall linear infinite;
+}
+
+@keyframes gameover-confetti-fall {
+  0%   { transform: translateY(-10vh) rotate(0deg);   opacity: 0; }
+  10%  { opacity: 0.95; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* Rain (lose) */
+.gameover-rain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.gameover-rain-drop {
+  position: absolute;
+  top: -20px;
+  width: 2px;
+  height: 18px;
+  background: linear-gradient(180deg, rgba(147, 197, 253, 0), rgba(147, 197, 253, 0.85));
+  border-radius: 2px;
+  animation: gameover-rain-fall linear infinite;
+}
+
+@keyframes gameover-rain-fall {
+  0%   { transform: translateY(-10vh); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(110vh); opacity: 0.9; }
+}
+
+/* Stormy waves at the bottom (lose) */
+.gameover-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 160px;
+  pointer-events: none;
+  z-index: 1;
+  animation: gameover-waves-pulse 5s ease-in-out infinite;
+}
+
+@keyframes gameover-waves-pulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(8px); }
+}
+
+/* Compact layout for small screens */
+@media (max-width: 420px) {
+  .gameover-card    { padding: 28px 22px 22px; gap: 10px; }
+  .gameover-title   { font-size: 38px; }
+  .gameover-hero-stat-num { font-size: 36px; }
+  .gameover-stats   { grid-template-columns: 1fr; }
+}

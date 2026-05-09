@@ -6,6 +6,7 @@ import { REST_COST, REST_HEAL } from './logic'
 import { CASTLE_PART_DEFS, ALL_PARTS, hasPrereq } from './castleParts'
 import CastleView from './CastleView'
 import CombatHeader from './CombatHeader'
+import SandDollarIcon from './SandDollarIcon'
 
 type Props = {
   state: GameState
@@ -65,16 +66,22 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="font-bold text-amber-900 text-xl">Rest</span>
-                <span className="text-amber-800/75 text-base">Heal {REST_HEAL} HP for ${REST_COST}</span>
+                <span className="text-amber-800/75 text-base inline-flex items-center gap-1.5">
+                  Heal {REST_HEAL} HP for
+                  <SandDollarIcon size={18} />
+                  {REST_COST}
+                </span>
               </div>
             </div>
             <button
-              className="reward-btn reward-btn-neutral"
+              className="reward-btn reward-btn-neutral inline-flex items-center gap-2"
               style={canRest ? {} : { opacity: 0.5, cursor: 'not-allowed' }}
               disabled={!canRest}
               onClick={() => dispatch({ type: 'rest' })}
             >
-              Rest (${REST_COST})
+              Rest
+              <SandDollarIcon size={20} />
+              {REST_COST}
             </button>
           </div>
 
@@ -103,7 +110,7 @@ function PartButton({ partType, state, dispatch }: {
   const canBuild = !owned && meetsPrereq && canAfford
 
   let className: string
-  let statusLabel: string
+  let statusLabel: React.ReactNode
 
   if (owned) {
     className = 'part-button-built'
@@ -111,12 +118,14 @@ function PartButton({ partType, state, dispatch }: {
   } else if (!meetsPrereq) {
     className = 'part-button-locked'
     statusLabel = `Needs ${def.prereq}`
-  } else if (!canAfford) {
-    className = 'part-button-cant-afford'
-    statusLabel = `$${def.cost}`
   } else {
-    className = 'part-button-available'
-    statusLabel = `$${def.cost}`
+    className = canAfford ? 'part-button-available' : 'part-button-cant-afford'
+    statusLabel = (
+      <span className="inline-flex items-center gap-1">
+        <SandDollarIcon size={16} />
+        {def.cost}
+      </span>
+    )
   }
 
   return (
