@@ -99,7 +99,7 @@ export function createGame(): GameState {
   const map = generateMap()
 
   return {
-    phase: 'map',
+    phase: 'start',
     playerHp: STARTING_HP,
     playerMaxHp: STARTING_HP,
     playerBlock: 0,
@@ -203,6 +203,7 @@ export type GameAction =
   | { type: 'event_remove_card'; cardId: string }
   | { type: 'skip_event_remove' }
   | { type: 'restart' }
+  | { type: 'start_game' }
   | { type: 'debug_kill_all' }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -245,6 +246,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return skipEventRemove(state)
     case 'restart':
       return createGame()
+    case 'start_game':
+      return state.phase === 'start' ? { ...state, phase: 'map' } : state
     case 'debug_kill_all':
       return debugKillAll(state)
     default:

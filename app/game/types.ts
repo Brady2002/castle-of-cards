@@ -105,6 +105,7 @@ export type CastlePartDef = {
 
 // === Game State ===
 export type Phase =
+  | 'start'
   | 'map'
   | 'combat_player_turn'
   | 'targeting'

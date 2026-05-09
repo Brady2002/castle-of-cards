@@ -14,6 +14,7 @@ import CastleBuildScreen from './CastleBuildScreen'
 import GameOverScreen from './GameOverScreen'
 import MapScreen from './MapScreen'
 import EventScreen from './EventScreen'
+import StartScreen from './StartScreen'
 import PilePeekModal from './PilePeekModal'
 import MapPeekModal from './MapPeekModal'
 
@@ -181,10 +182,10 @@ export default function Game() {
     }
   }, [state?.hand])
 
-  // Combat music — loop LowTide while in active combat, fade out when leaving.
-  // Browsers block autoplay until a user interaction; the first play() may reject
-  // silently (caught below), and subsequent phase changes after the player has
-  // clicked anything will succeed.
+  // Combat music — loop LowTide while in active combat (and on the start menu),
+  // fade out when leaving. Browsers block autoplay until a user interaction; the
+  // first play() may reject silently (caught below), so on the start menu we
+  // also retry on the first pointerdown/keydown.
   const combatAudioRef = useRef<HTMLAudioElement | null>(null)
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
@@ -198,19 +199,27 @@ export default function Game() {
       combatAudioRef.current = a
     }
     const audio = combatAudioRef.current
-    const inCombat =
+    const shouldPlay =
+      state?.phase === 'start' ||
       state?.phase === 'combat_player_turn' ||
       state?.phase === 'combat_enemy_turn' ||
       state?.phase === 'targeting'
-    // Cancel any in-flight fade so re-entering combat snaps back to full volume
+    // Cancel any in-flight fade so re-entering snaps back to full volume
     if (fadeIntervalRef.current) {
       clearInterval(fadeIntervalRef.current)
       fadeIntervalRef.current = null
     }
-    if (inCombat) {
+    if (shouldPlay) {
       audio.volume = TARGET_VOLUME
       void audio.play().catch(() => {})
-      return
+      // Retry on first interaction in case autoplay was blocked (start menu).
+      const retry = () => { void audio.play().catch(() => {}) }
+      window.addEventListener('pointerdown', retry, { once: true })
+      window.addEventListener('keydown', retry, { once: true })
+      return () => {
+        window.removeEventListener('pointerdown', retry)
+        window.removeEventListener('keydown', retry)
+      }
     }
     if (audio.paused || audio.volume <= 0) {
       audio.pause()
@@ -347,6 +356,10 @@ export default function Game() {
   }
 
   // Full-screen phases
+  if (state.phase === 'start') {
+    return <StartScreen dispatch={dispatch} />
+  }
+
   if (state.phase === 'win' || state.phase === 'lose') {
     return <GameOverScreen state={state} dispatch={dispatch} />
   }
