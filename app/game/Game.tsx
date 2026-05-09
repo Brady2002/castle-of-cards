@@ -1,155 +1,123 @@
 'use client'
 
-import { useState } from 'react'
-import { createGame, endTurn, pickReward, playCard } from './logic'
-import { ENERGY_PER_TURN } from './logic'
-import type { Card, GameState } from './types'
-import Grid from './Grid'
+import { useEffect, useReducer, useState } from 'react'
+import { createGame, gameReducer } from './logic'
+import type { GameState } from './types'
 import Hand from './Hand'
+import CombatHeader from './CombatHeader'
+import PlayerStatus from './PlayerStatus'
+import EnemyView from './EnemyView'
+import VictoryModal from './VictoryModal'
 import RewardModal from './RewardModal'
+import CastleBuildScreen from './CastleBuildScreen'
+import GameOverScreen from './GameOverScreen'
 
 export default function Game() {
-  const [state, setState] = useState<GameState>(createGame)
-  const [dragging, setDragging] = useState<Card | null>(null)
+  const [state, dispatch] = useReducer(gameReducer, null as unknown as GameState)
+  const [initialized, setInitialized] = useState(false)
 
-  function handleDragStart(card: Card) {
-    setDragging(card)
+  useEffect(() => {
+    dispatch({ type: 'restart' })
+    setInitialized(true)
+  }, [])
+
+  // Enemy turn auto-resolve with delay
+  useEffect(() => {
+    if (!state || state.phase !== 'combat_enemy_turn') return
+    const timer = setTimeout(() => {
+      dispatch({ type: 'resolve_enemy_turn' })
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [state?.phase])
+
+  if (!initialized || !state) {
+    return <div className="min-h-screen game-bg" />
   }
 
-  function handleDragEnd() {
-    setDragging(null)
+  // Full-screen phases
+  if (state.phase === 'win' || state.phase === 'lose') {
+    return <GameOverScreen state={state} dispatch={dispatch} />
   }
 
-  function handleDrop(row: number, col: number) {
-    if (!dragging) return
-    setState(s => playCard(s, dragging.id, row, col))
-    setDragging(null)
+  if (state.phase === 'castle_build') {
+    return <CastleBuildScreen state={state} dispatch={dispatch} />
   }
 
-  function handleEndTurn() {
-    setState(s => endTurn(s))
-  }
-
-  function handlePickReward(card: Card) {
-    setState(s => pickReward(s, card))
-  }
-
-  function handleRestart() {
-    setState(createGame())
-    setDragging(null)
-  }
-
-  if (state.phase === 'win') {
-    return (
-      <div className="min-h-screen bg-sky-300 flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-12 shadow-2xl text-center max-w-sm">
-          <div className="text-7xl mb-4">🚩</div>
-          <h1 className="text-4xl font-bold text-amber-800 mb-2">Your Flag Stands!</h1>
-          <p className="text-gray-600 mb-8">
-            You built your sandcastle high enough before the tide came in.
-          </p>
-          <button
-            onClick={handleRestart}
-            className="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl transition-colors"
-          >
-            Play Again
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (state.phase === 'lose') {
-    return (
-      <div className="min-h-screen bg-blue-900 flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-12 shadow-2xl text-center max-w-sm">
-          <div className="text-7xl mb-4">🌊</div>
-          <h1 className="text-4xl font-bold text-blue-800 mb-2">The Tide Won!</h1>
-          <p className="text-gray-600 mb-8">
-            The sea swallowed your sandcastle. Better luck next time!
-          </p>
-          <button
-            onClick={handleRestart}
-            className="px-8 py-3 bg-blue-500 hover:bg-blue-400 text-white font-bold rounded-xl transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const tideWarning = state.turnsUntilTide === 1
+  // Combat phases
+  const isTargeting = state.phase === 'targeting'
+  const isEnemyTurn = state.phase === 'combat_enemy_turn'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-300 to-amber-100 flex flex-col items-center py-6 px-4 gap-4">
+    <div className="min-h-screen game-bg flex flex-col items-center px-4 pt-4 pb-0 gap-3">
+      {/* Header */}
+      <CombatHeader
+        encounter={state.encounter}
+        playerHp={state.playerHp}
+        playerMaxHp={state.playerMaxHp}
+        sandDollars={state.sandDollars}
+        castleScore={state.castleScore}
+      />
 
-      {/* Header bar */}
-      <div className="w-full max-w-3xl">
-        <div className="bg-amber-900 text-white rounded-2xl px-6 py-3 flex items-center justify-between shadow-lg">
-          <h1 className="text-xl font-bold">🏖️ Sandcastle</h1>
-          <div className="flex gap-5 text-sm font-medium">
-            <span>Turn {state.turn}</span>
-            <span className={tideWarning ? 'text-red-300 font-bold' : 'text-amber-200'}>
-              {tideWarning ? '⚠️ Tide rising!' : `Tide in ${state.turnsUntilTide}`}
-            </span>
-            <span>🌊 Level {state.tideLevel}</span>
-          </div>
-        </div>
+      {/* Enemy area */}
+      <div className="flex gap-4 justify-center items-end w-full max-w-5xl py-4">
+        {state.enemies.map(enemy => (
+          <EnemyView
+            key={enemy.id}
+            enemy={enemy}
+            targetable={isTargeting}
+            onClick={isTargeting ? () => dispatch({ type: 'target_enemy', enemyId: enemy.id }) : undefined}
+          />
+        ))}
       </div>
 
-      {/* Main area: grid + sidebar */}
-      <div className="flex gap-4 items-start">
-        <Grid
-          grid={state.grid}
-          tideLevel={state.tideLevel}
-          dragging={dragging}
-          onDrop={handleDrop}
-        />
-
-        {/* Sidebar */}
-        <div className="flex flex-col gap-3 w-36 text-sm">
-          <div className="bg-white/80 rounded-xl p-3 shadow">
-            <div className="font-bold text-amber-800 mb-2">Energy</div>
-            <div className="flex gap-1 flex-wrap">
-              {Array.from({ length: ENERGY_PER_TURN }, (_, i) => (
-                <span key={i} className={i < state.energy ? 'text-yellow-400' : 'text-gray-200'}>
-                  ⚡
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white/80 rounded-xl p-3 shadow">
-            <div className="font-bold text-amber-800 mb-1">Deck</div>
-            <div className="text-gray-600">{state.deck.length} left</div>
-            <div className="text-gray-400 text-xs">{state.discard.length} discarded</div>
-          </div>
-
-          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-3 shadow">
-            <div className="font-bold text-amber-800 mb-1">🎯 Goal</div>
-            <div className="text-xs text-gray-600">Plant 🚩 at row 7 or higher</div>
-          </div>
-
-          <div className="bg-white/80 rounded-xl p-3 shadow text-xs text-gray-500">
-            <div className="font-semibold text-gray-700 mb-1">How to play</div>
-            <p>Drag cards onto the grid to build. Pieces need support below them.</p>
+      {/* Targeting banner */}
+      {isTargeting && (
+        <div className="w-full max-w-5xl">
+          <div className="flex items-center justify-between px-4 py-2 rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #fef2f2, #fee2e2)', border: '2px solid #fca5a5' }}>
+            <span className="text-red-700 font-bold text-sm">
+              Click an enemy to target
+            </span>
+            <button
+              className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-bold border border-red-300 cursor-pointer"
+              onClick={() => dispatch({ type: 'cancel_target' })}
+            >
+              Cancel
+            </button>
           </div>
         </div>
+      )}
+
+      {/* Enemy turn indicator */}
+      {isEnemyTurn && (
+        <div className="w-full max-w-5xl">
+          <div className="flex items-center justify-center px-4 py-2 rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '2px solid #f59e0b' }}>
+            <span className="text-amber-800 font-bold text-sm animate-pulse">
+              Enemy Turn...
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Player status */}
+      <div className="w-full max-w-5xl">
+        <PlayerStatus state={state} />
       </div>
 
       {/* Hand */}
-      <Hand
-        cards={state.hand}
-        energy={state.energy}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onEndTurn={handleEndTurn}
-      />
+      <div className="mt-auto w-full flex justify-center">
+        <Hand state={state} dispatch={dispatch} />
+      </div>
 
-      {/* Reward modal (shown after each tide rise) */}
-      {state.phase === 'reward' && (
-        <RewardModal options={state.rewardOptions} onPick={handlePickReward} />
+      {/* Victory modal */}
+      {state.phase === 'combat_victory' && (
+        <VictoryModal sandDollarsEarned={state.sandDollarsEarned} dispatch={dispatch} />
+      )}
+
+      {/* Reward modal */}
+      {state.phase === 'card_reward' && (
+        <RewardModal state={state} dispatch={dispatch} />
       )}
     </div>
   )

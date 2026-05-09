@@ -1,22 +1,24 @@
-import type { Card, Cell, GameState, Phase, PieceType } from './types'
+import type {
+  CardInstance,
+  CastleBonuses,
+  CastlePartType,
+  EnemyInstance,
+  GameState,
+  StatusEffects,
+} from './types'
+import { buildStartingDeck, generateRewardOptions, getDef, needsTarget } from './cards'
+import { spawnEnemies, pickNextIntent, getNextIntentIndex, getSandDollarReward, checkPhaseTransition } from './enemies'
+import { computeCastleBonuses, computeCastleScore, CASTLE_PART_DEFS, hasPrereq } from './castleParts'
 
-export const COLS = 8
-export const ROWS = 10
-export const HAND_SIZE = 4
-export const ENERGY_PER_TURN = 3
-export const TURNS_PER_TIDE = 3
-export const WIN_ROW = 7  // flag must reach this row or higher to win
+export const HAND_SIZE = 5
+export const STARTING_ENERGY = 3
+export const STARTING_HP = 50
+export const WIN_SCORE = 50
+export const MAX_ENCOUNTERS = 12
+export const REST_COST = 12
+export const REST_HEAL = 15
 
-const PIECE_INFO: Record<PieceType, { name: string; description: string; cost: number }> = {
-  sand:  { name: 'Sand Scoop',  description: 'Pack sand onto the castle.',    cost: 1 },
-  wall:  { name: 'Sand Wall',   description: 'Build a sturdy wall section.',   cost: 1 },
-  tower: { name: 'Tower Block', description: 'Stack a tower piece. Costs 2.', cost: 2 },
-  flag:  { name: 'Plant Flag',  description: `Win if placed at row ${WIN_ROW}+!`, cost: 1 },
-}
-
-export function makeCard(piece: PieceType, id: string): Card {
-  return { id, piece, ...PIECE_INFO[piece] }
-}
+// === Helpers ===
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr]
@@ -27,122 +29,602 @@ function shuffle<T>(arr: T[]): T[] {
   return copy
 }
 
-function buildStartingDeck(): Card[] {
-  const layout: [PieceType, number][] = [
-    ['sand', 8], ['wall', 4], ['tower', 3], ['flag', 2],
-  ]
-  const cards: Card[] = []
-  let i = 0
-  for (const [piece, count] of layout) {
-    for (let j = 0; j < count; j++) {
-      cards.push(makeCard(piece, `start-${piece}-${i++}`))
-    }
-  }
-  return cards
-}
-
-function drawCards(deck: Card[], discard: Card[], count: number) {
+function drawCards(
+  deck: CardInstance[],
+  discard: CardInstance[],
+  count: number
+): { drawn: CardInstance[]; deck: CardInstance[]; discard: CardInstance[] } {
   let d = [...deck]
   let disc = [...discard]
-  const hand: Card[] = []
+  const drawn: CardInstance[] = []
   for (let i = 0; i < count; i++) {
     if (d.length === 0) {
       d = shuffle(disc)
       disc = []
     }
-    if (d.length > 0) hand.push(d.pop()!)
+    if (d.length > 0) drawn.push(d.pop()!)
   }
-  return { hand, deck: d, discard: disc }
+  return { drawn, deck: d, discard: disc }
 }
+
+function emptyStatus(): StatusEffects {
+  return { vulnerable: 0, weak: 0, strength: 0 }
+}
+
+function emptyBonuses(): CastleBonuses {
+  return {
+    maxHpBonus: 0,
+    startingBlock: 0,
+    blockPerTurn: 0,
+    extraEnergyTurn1: false,
+    extraDraw: 0,
+    enemyStartVuln: 0,
+    combatStartDamage: 0,
+  }
+}
+
+// Damage calc: base + strength, then modified by weak (deal 25% less), then target vuln (take 50% more)
+function calcDamage(base: number, attackerStrength: number, attackerWeak: number, targetVuln: number): number {
+  let dmg = base + attackerStrength
+  if (attackerWeak > 0) dmg = Math.floor(dmg * 0.75)
+  if (targetVuln > 0) dmg = Math.floor(dmg * 1.5)
+  return Math.max(0, dmg)
+}
+
+function applyDamageToTarget(hp: number, block: number, damage: number): { hp: number; block: number } {
+  const blocked = Math.min(block, damage)
+  const remaining = damage - blocked
+  return {
+    block: block - blocked,
+    hp: Math.max(0, hp - remaining),
+  }
+}
+
+function tickStatuses(status: StatusEffects): StatusEffects {
+  return {
+    vulnerable: Math.max(0, status.vulnerable - 1),
+    weak: Math.max(0, status.weak - 1),
+    strength: status.strength, // permanent
+  }
+}
+
+// === Create Game ===
 
 export function createGame(): GameState {
-  const shuffled = shuffle(buildStartingDeck())
-  const { hand, deck, discard } = drawCards(shuffled, [], HAND_SIZE)
-  return {
-    phase: 'playing',
-    grid: Array.from({ length: ROWS }, () => Array<Cell>(COLS).fill(null)),
-    hand,
+  const deck = shuffle(buildStartingDeck())
+  const bonuses = emptyBonuses()
+
+  return initCombat({
+    phase: 'combat_player_turn',
+    playerHp: STARTING_HP,
+    playerMaxHp: STARTING_HP,
+    playerBlock: 0,
+    energy: STARTING_ENERGY,
+    maxEnergy: STARTING_ENERGY,
+    playerStatus: emptyStatus(),
+    hand: [],
     deck,
-    discard,
-    tideLevel: 0,
-    turnsUntilTide: TURNS_PER_TIDE,
-    energy: ENERGY_PER_TURN,
-    turn: 1,
+    discard: [],
+    enemies: [],
+    selectedCardId: null,
+    encounter: 1,
+    turnNumber: 1,
+    sandDollars: 0,
+    castle: [],
+    castleScore: 0,
+    castleBonuses: bonuses,
     rewardOptions: [],
+    canRemoveCard: false,
+    sandDollarsEarned: 0,
+  })
+}
+
+function initCombat(state: GameState): GameState {
+  const bonuses = state.castleBonuses
+  let enemies = spawnEnemies(state.encounter)
+
+  // Castle bonuses: Decoration → enemies start with Vulnerable
+  if (bonuses.enemyStartVuln > 0) {
+    enemies = enemies.map(e => ({
+      ...e,
+      status: { ...e.status, vulnerable: e.status.vulnerable + bonuses.enemyStartVuln },
+    }))
   }
-}
 
-// Pieces need support below, or sit on the beach/tide-line.
-// Tide line acts as new ground so players can always rebuild above the water.
-export function canPlace(grid: Cell[][], row: number, col: number, tideLevel: number): boolean {
-  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false
-  if (row < tideLevel) return false
-  if (grid[row][col] !== null) return false
-  if (row === 0 || row === tideLevel) return true
-  return grid[row - 1][col] !== null
-}
+  // Castle bonuses: Battlement → damage all enemies at combat start
+  if (bonuses.combatStartDamage > 0) {
+    enemies = enemies.map(e => ({
+      ...e,
+      hp: Math.max(1, e.hp - bonuses.combatStartDamage),
+    }))
+  }
 
-export function playCard(state: GameState, cardId: string, row: number, col: number): GameState {
-  const card = state.hand.find(c => c.id === cardId)
-  if (!card) return state
-  if (!canPlace(state.grid, row, col, state.tideLevel)) return state
-  if (state.energy < card.cost) return state
+  // Draw initial hand
+  const drawCount = HAND_SIZE + bonuses.extraDraw
+  const { drawn, deck, discard } = drawCards(state.deck, state.discard, drawCount)
 
-  const grid = state.grid.map(r => [...r])
-  grid[row][col] = card.piece
-
-  const isWin = card.piece === 'flag' && row >= WIN_ROW
+  // Energy: base + turn 1 bonus from Wall
+  const energy = STARTING_ENERGY + (bonuses.extraEnergyTurn1 ? 1 : 0)
 
   return {
     ...state,
-    phase: isWin ? 'win' : state.phase,
-    grid,
-    hand: state.hand.filter(c => c.id !== cardId),
-    discard: [...state.discard, card],
-    energy: state.energy - card.cost,
-  }
-}
-
-function makeRewardOptions(): Card[] {
-  const pool: PieceType[] = ['sand', 'sand', 'wall', 'wall', 'tower', 'tower', 'flag']
-  return shuffle(pool).slice(0, 3).map((p, i) => makeCard(p, `reward-${p}-${Date.now()}-${i}`))
-}
-
-export function endTurn(state: GameState): GameState {
-  if (state.phase !== 'playing') return state
-
-  const newTurnsUntil = state.turnsUntilTide - 1
-  const tideRises = newTurnsUntil <= 0
-  const tideLevel = tideRises ? state.tideLevel + 1 : state.tideLevel
-
-  // Lose when tide is so high there's no room to build to WIN_ROW
-  const isLose = tideLevel > WIN_ROW
-
-  const { hand, deck, discard } = drawCards(state.deck, state.discard, HAND_SIZE)
-
-  let phase: Phase = 'playing'
-  if (isLose) phase = 'lose'
-  else if (tideRises) phase = 'reward'
-
-  return {
-    ...state,
-    phase,
-    tideLevel,
-    turnsUntilTide: tideRises ? TURNS_PER_TIDE : newTurnsUntil,
-    energy: ENERGY_PER_TURN,
-    turn: state.turn + 1,
-    hand,
+    phase: 'combat_player_turn',
+    enemies,
+    hand: drawn,
     deck,
     discard,
-    rewardOptions: tideRises && !isLose ? makeRewardOptions() : state.rewardOptions,
+    playerBlock: bonuses.startingBlock,
+    energy,
+    maxEnergy: STARTING_ENERGY,
+    playerStatus: emptyStatus(),
+    selectedCardId: null,
+    turnNumber: 1,
   }
 }
 
-export function pickReward(state: GameState, card: Card): GameState {
+// === Can Play ===
+
+export function canPlayCard(state: GameState, card: CardInstance): boolean {
+  if (state.phase !== 'combat_player_turn' && state.phase !== 'targeting') return false
+  const def = getDef(card)
+  return state.energy >= def.energyCost
+}
+
+// === Actions ===
+
+export type GameAction =
+  | { type: 'play_card'; cardId: string; targetId?: string }
+  | { type: 'select_card'; cardId: string }
+  | { type: 'cancel_target' }
+  | { type: 'target_enemy'; enemyId: string }
+  | { type: 'end_turn' }
+  | { type: 'resolve_enemy_turn' }
+  | { type: 'continue_from_victory' }
+  | { type: 'pick_reward'; cardId: string }
+  | { type: 'skip_reward' }
+  | { type: 'remove_card'; cardId: string }
+  | { type: 'build_part'; part: CastlePartType }
+  | { type: 'rest' }
+  | { type: 'continue_from_build' }
+  | { type: 'restart' }
+
+export function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case 'select_card':
+      return selectCard(state, action.cardId)
+    case 'cancel_target':
+      return { ...state, phase: 'combat_player_turn', selectedCardId: null }
+    case 'target_enemy':
+      return targetEnemy(state, action.enemyId)
+    case 'play_card':
+      return playCardDirect(state, action.cardId, action.targetId)
+    case 'end_turn':
+      return endTurn(state)
+    case 'resolve_enemy_turn':
+      return resolveEnemyTurn(state)
+    case 'continue_from_victory':
+      return continueFromVictory(state)
+    case 'pick_reward':
+      return pickReward(state, action.cardId)
+    case 'skip_reward':
+      return skipReward(state)
+    case 'remove_card':
+      return removeCard(state, action.cardId)
+    case 'build_part':
+      return buildCastlePart(state, action.part)
+    case 'rest':
+      return rest(state)
+    case 'continue_from_build':
+      return continueFromBuild(state)
+    case 'restart':
+      return createGame()
+    default:
+      return state
+  }
+}
+
+// === Select Card (for targeting) ===
+
+function selectCard(state: GameState, cardId: string): GameState {
+  if (state.phase !== 'combat_player_turn') return state
+  const card = state.hand.find(c => c.id === cardId)
+  if (!card || !canPlayCard(state, card)) return state
+
+  if (needsTarget(card)) {
+    return { ...state, phase: 'targeting', selectedCardId: cardId }
+  }
+
+  // Non-targeted card: play immediately
+  return playCard(state, card, undefined)
+}
+
+function targetEnemy(state: GameState, enemyId: string): GameState {
+  if (state.phase !== 'targeting' || !state.selectedCardId) return state
+  const card = state.hand.find(c => c.id === state.selectedCardId)
+  if (!card) return { ...state, phase: 'combat_player_turn', selectedCardId: null }
+
+  return playCard(state, card, enemyId)
+}
+
+function playCardDirect(state: GameState, cardId: string, targetId?: string): GameState {
+  const card = state.hand.find(c => c.id === cardId)
+  if (!card || !canPlayCard(state, card)) return state
+
+  if (needsTarget(card) && !targetId) {
+    return { ...state, phase: 'targeting', selectedCardId: cardId }
+  }
+
+  return playCard(state, card, targetId)
+}
+
+function playCard(state: GameState, card: CardInstance, targetId: string | undefined): GameState {
+  const def = getDef(card)
+
+  let newState: GameState = {
+    ...state,
+    phase: 'combat_player_turn',
+    energy: state.energy - def.energyCost,
+    hand: state.hand.filter(c => c.id !== card.id),
+    discard: [...state.discard, card],
+    selectedCardId: null,
+  }
+
+  // Resolve each effect
+  for (const effect of def.effects) {
+    newState = resolveEffect(newState, effect, targetId)
+  }
+
+  // Check for phase transitions (boss enrage)
+  newState = {
+    ...newState,
+    enemies: newState.enemies.map(e => {
+      const transitioned = checkPhaseTransition(e)
+      return transitioned ?? e
+    }),
+  }
+
+  // Check if all enemies dead
+  if (newState.enemies.every(e => e.hp <= 0)) {
+    const reward = getSandDollarReward(newState.encounter)
+    return {
+      ...newState,
+      phase: 'combat_victory',
+      enemies: newState.enemies.filter(e => e.hp > 0),
+      sandDollarsEarned: reward,
+    }
+  }
+
+  // Remove dead enemies
+  newState = { ...newState, enemies: newState.enemies.filter(e => e.hp > 0) }
+
+  return newState
+}
+
+function resolveEffect(
+  state: GameState,
+  effect: import('./types').CardEffect,
+  targetId: string | undefined
+): GameState {
+  switch (effect.kind) {
+    case 'damage': {
+      if (effect.target === 'all') {
+        const enemies = state.enemies.map(e => {
+          const dmg = calcDamage(effect.amount, state.playerStatus.strength, state.playerStatus.weak, e.status.vulnerable)
+          const result = applyDamageToTarget(e.hp, e.block, dmg)
+          return { ...e, hp: result.hp, block: result.block }
+        })
+        return { ...state, enemies }
+      } else {
+        // single target
+        if (!targetId) return state
+        const enemies = state.enemies.map(e => {
+          if (e.id !== targetId) return e
+          const dmg = calcDamage(effect.amount, state.playerStatus.strength, state.playerStatus.weak, e.status.vulnerable)
+          const result = applyDamageToTarget(e.hp, e.block, dmg)
+          return { ...e, hp: result.hp, block: result.block }
+        })
+        return { ...state, enemies }
+      }
+    }
+
+    case 'multi_hit': {
+      if (!targetId) return state
+      let enemies = [...state.enemies]
+      for (let i = 0; i < effect.hits; i++) {
+        enemies = enemies.map(e => {
+          if (e.id !== targetId || e.hp <= 0) return e
+          const dmg = calcDamage(effect.perHit, state.playerStatus.strength, state.playerStatus.weak, e.status.vulnerable)
+          const result = applyDamageToTarget(e.hp, e.block, dmg)
+          return { ...e, hp: result.hp, block: result.block }
+        })
+      }
+      return { ...state, enemies }
+    }
+
+    case 'block':
+      return { ...state, playerBlock: state.playerBlock + effect.amount }
+
+    case 'draw': {
+      const { drawn, deck, discard } = drawCards(state.deck, state.discard, effect.count)
+      return { ...state, hand: [...state.hand, ...drawn], deck, discard }
+    }
+
+    case 'apply_status': {
+      if (effect.target === 'all') {
+        const enemies = state.enemies.map(e => ({
+          ...e,
+          status: {
+            ...e.status,
+            [effect.status]: e.status[effect.status] + effect.amount,
+          },
+        }))
+        return { ...state, enemies }
+      } else {
+        if (!targetId) return state
+        const enemies = state.enemies.map(e => {
+          if (e.id !== targetId) return e
+          return {
+            ...e,
+            status: {
+              ...e.status,
+              [effect.status]: e.status[effect.status] + effect.amount,
+            },
+          }
+        })
+        return { ...state, enemies }
+      }
+    }
+
+    case 'energy':
+      return { ...state, energy: state.energy + effect.amount }
+
+    default:
+      return state
+  }
+}
+
+// === End Turn ===
+
+function endTurn(state: GameState): GameState {
+  if (state.phase !== 'combat_player_turn') return state
+
+  // Apply Seawall bonus block
+  let block = state.playerBlock
+  if (state.castleBonuses.blockPerTurn > 0) {
+    block += state.castleBonuses.blockPerTurn
+  }
+
   return {
     ...state,
-    phase: 'playing',
+    phase: 'combat_enemy_turn',
+    selectedCardId: null,
+    playerBlock: block,
+  }
+}
+
+// === Enemy Turn ===
+
+function resolveEnemyTurn(state: GameState): GameState {
+  if (state.phase !== 'combat_enemy_turn') return state
+
+  let playerHp = state.playerHp
+  let playerBlock = state.playerBlock
+  let playerStatus = { ...state.playerStatus }
+
+  // Reset enemy blocks from previous turn
+  let enemies = state.enemies.map(e => ({ ...e, block: 0 }))
+
+  // Execute each enemy's intent
+  for (let i = 0; i < enemies.length; i++) {
+    const enemy = enemies[i]
+    const intent = enemy.intent
+
+    switch (intent.type) {
+      case 'attack': {
+        const dmg = calcDamage(intent.damage, enemy.status.strength, enemy.status.weak, playerStatus.vulnerable)
+        const result = applyDamageToTarget(playerHp, playerBlock, dmg)
+        playerHp = result.hp
+        playerBlock = result.block
+        break
+      }
+      case 'multi_attack': {
+        for (let h = 0; h < intent.hits; h++) {
+          const dmg = calcDamage(intent.damage, enemy.status.strength, enemy.status.weak, playerStatus.vulnerable)
+          const result = applyDamageToTarget(playerHp, playerBlock, dmg)
+          playerHp = result.hp
+          playerBlock = result.block
+        }
+        break
+      }
+      case 'defend': {
+        enemies = enemies.map((e, idx) =>
+          idx === i ? { ...e, block: e.block + intent.block } : e
+        )
+        break
+      }
+      case 'buff': {
+        enemies = enemies.map((e, idx) =>
+          idx === i
+            ? { ...e, status: { ...e.status, [intent.status]: e.status[intent.status] + intent.amount } }
+            : e
+        )
+        break
+      }
+      case 'debuff': {
+        playerStatus = {
+          ...playerStatus,
+          [intent.status]: playerStatus[intent.status] + intent.amount,
+        }
+        break
+      }
+    }
+  }
+
+  // Check player dead
+  if (playerHp <= 0) {
+    return {
+      ...state,
+      phase: 'lose',
+      playerHp: 0,
+      playerBlock: 0,
+      enemies,
+    }
+  }
+
+  // Pick next intents and tick enemy statuses
+  enemies = enemies.map(e => {
+    const nextIntent = pickNextIntent(e)
+    const nextIndex = getNextIntentIndex(e)
+    const tickedStatus = tickStatuses(e.status)
+    return { ...e, intent: nextIntent, intentIndex: nextIndex, status: tickedStatus }
+  })
+
+  // Tick player statuses
+  playerStatus = tickStatuses(playerStatus)
+
+  // Discard hand, draw new hand
+  const discardPile = [...state.discard, ...state.hand]
+  const drawCount = HAND_SIZE + state.castleBonuses.extraDraw
+  const { drawn, deck, discard } = drawCards(state.deck, discardPile, drawCount)
+
+  return {
+    ...state,
+    phase: 'combat_player_turn',
+    playerHp,
+    playerBlock: 0, // block resets each turn
+    playerStatus,
+    enemies,
+    hand: drawn,
+    deck,
+    discard,
+    energy: state.maxEnergy,
+    selectedCardId: null,
+    turnNumber: state.turnNumber + 1,
+  }
+}
+
+// === Victory / Rewards ===
+
+function continueFromVictory(state: GameState): GameState {
+  if (state.phase !== 'combat_victory') return state
+
+  // Boss defeated — win/lose based on score
+  if (state.encounter >= MAX_ENCOUNTERS) {
+    return {
+      ...state,
+      phase: state.castleScore >= WIN_SCORE ? 'win' : 'lose',
+    }
+  }
+
+  const reward = state.sandDollarsEarned
+  const canRemove = state.encounter % 3 === 0 // encounters 3, 6, 9
+  const rewardOptions = generateRewardOptions(state.encounter)
+
+  return {
+    ...state,
+    phase: 'card_reward',
+    sandDollars: state.sandDollars + reward,
+    rewardOptions,
+    canRemoveCard: canRemove,
+  }
+}
+
+function pickReward(state: GameState, cardId: string): GameState {
+  if (state.phase !== 'card_reward') return state
+  const card = state.rewardOptions.find(c => c.id === cardId)
+  if (!card) return state
+
+  return {
+    ...state,
+    phase: 'castle_build',
     deck: [...state.deck, card],
     rewardOptions: [],
   }
+}
+
+function skipReward(state: GameState): GameState {
+  if (state.phase !== 'card_reward') return state
+  return {
+    ...state,
+    phase: 'castle_build',
+    rewardOptions: [],
+  }
+}
+
+function removeCard(state: GameState, cardId: string): GameState {
+  if (!state.canRemoveCard) return state
+
+  return {
+    ...state,
+    deck: state.deck.filter(c => c.id !== cardId),
+    discard: state.discard.filter(c => c.id !== cardId),
+    canRemoveCard: false,
+  }
+}
+
+// === Castle Building ===
+
+function buildCastlePart(state: GameState, part: CastlePartType): GameState {
+  if (state.phase !== 'castle_build') return state
+
+  const def = CASTLE_PART_DEFS[part]
+  if (state.sandDollars < def.cost) return state
+  if (state.castle.includes(part)) return state
+  if (!hasPrereq(state.castle, part)) return state
+
+  const newCastle = [...state.castle, part]
+  const newBonuses = computeCastleBonuses(newCastle)
+  const newScore = computeCastleScore(newCastle)
+
+  // Foundation heals +3 max HP
+  let newMaxHp = STARTING_HP + newBonuses.maxHpBonus
+  let newHp = state.playerHp
+  if (part === 'foundation') {
+    newHp = Math.min(newMaxHp, newHp + 3)
+  }
+
+  return {
+    ...state,
+    sandDollars: state.sandDollars - def.cost,
+    castle: newCastle,
+    castleScore: newScore,
+    castleBonuses: newBonuses,
+    playerMaxHp: newMaxHp,
+    playerHp: newHp,
+  }
+}
+
+function rest(state: GameState): GameState {
+  if (state.phase !== 'castle_build') return state
+  if (state.sandDollars < REST_COST) return state
+
+  return {
+    ...state,
+    sandDollars: state.sandDollars - REST_COST,
+    playerHp: Math.min(state.playerMaxHp, state.playerHp + REST_HEAL),
+  }
+}
+
+function continueFromBuild(state: GameState): GameState {
+  if (state.phase !== 'castle_build') return state
+
+  // Next encounter (boss victory is handled in continueFromVictory, not here)
+  const nextEncounter = state.encounter + 1
+
+  // Reset for next combat: discard hand, shuffle everything
+  const allCards = [...state.deck, ...state.discard, ...state.hand]
+
+  return initCombat({
+    ...state,
+    encounter: nextEncounter,
+    deck: shuffle(allCards),
+    discard: [],
+    hand: [],
+  })
+}
+
+// === Exports for UI ===
+
+export function computeScore(castle: CastlePartType[]): number {
+  return computeCastleScore(castle)
 }

@@ -1,42 +1,48 @@
 'use client'
 
-import type { Card } from './types'
+import type { GameAction } from './logic'
+import { canPlayCard } from './logic'
+import type { GameState } from './types'
 import CardComponent from './Card'
 
 type Props = {
-  cards: Card[]
-  energy: number
-  onDragStart: (card: Card) => void
-  onDragEnd: () => void
-  onEndTurn: () => void
+  state: GameState
+  dispatch: (action: GameAction) => void
 }
 
-export default function Hand({ cards, energy, onDragStart, onDragEnd, onEndTurn }: Props) {
+export default function Hand({ state, dispatch }: Props) {
+  const isPlayerTurn = state.phase === 'combat_player_turn' || state.phase === 'targeting'
+
   return (
-    <div className="w-full max-w-3xl">
-      <div className="bg-amber-900 rounded-2xl p-4 flex items-center gap-3 flex-wrap shadow-lg">
-        <div className="text-amber-200 text-sm font-medium mr-1">Hand:</div>
-
-        {cards.map(card => (
-          <CardComponent
-            key={card.id}
-            card={card}
-            disabled={card.cost > energy}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-          />
-        ))}
-
-        {cards.length === 0 && (
-          <span className="text-amber-400 italic text-sm">Empty — end turn to draw</span>
+    <div className="w-full max-w-5xl">
+      <div className="hand-tray p-4 pb-3 flex items-end gap-3 flex-wrap justify-center">
+        {state.hand.length === 0 && (
+          <span className="text-amber-300/70 italic text-sm py-4">No cards in hand</span>
         )}
 
-        <button
-          className="ml-auto px-5 py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl transition-colors shadow"
-          onClick={onEndTurn}
-        >
-          End Turn →
-        </button>
+        {state.hand.map(card => {
+          const playable = isPlayerTurn && canPlayCard(state, card)
+          const selected = state.selectedCardId === card.id
+
+          return (
+            <CardComponent
+              key={card.id}
+              card={card}
+              playable={playable}
+              selected={selected}
+              onClick={playable ? () => dispatch({ type: 'select_card', cardId: card.id }) : undefined}
+            />
+          )
+        })}
+
+        {isPlayerTurn && (
+          <button
+            className="btn-primary btn-end-turn ml-auto self-center text-base"
+            onClick={() => dispatch({ type: 'end_turn' })}
+          >
+            End Turn
+          </button>
+        )}
       </div>
     </div>
   )

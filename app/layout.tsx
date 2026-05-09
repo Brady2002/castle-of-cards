@@ -1,5 +1,11 @@
 import type { Metadata } from 'next'
+import { Patrick_Hand } from 'next/font/google'
 import './globals.css'
+
+const patrickHand = Patrick_Hand({
+  weight: '400',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: 'Sandcastle',
@@ -8,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={patrickHand.className}>
       <body>{children}</body>
     </html>
   )
