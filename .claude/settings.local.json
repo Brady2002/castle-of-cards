@@ -11,7 +11,10 @@
       "Bash(npm run *)",
       "Bash(grep -n \"\\\\\\\\$\" \"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\app\\\\game\\\\MapScreen.tsx\")",
       "Bash(grep -rn \">\\\\\\\\\\\\$<\\\\|fontWeight=\\\\\"bold\\\\\">\\\\\\\\\\\\$\\\\|fontSize=\\\\\"8\\\\\".*>\\\\\\\\\\\\$\\\\|reward-header-icon\\\\|sand_dollar_icon\\\\|SandDollar\" \"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\app\")",
-      "Bash(grep -rn \"label:.*\\\\\\\\\\\\$\\\\|description:.*\\\\\\\\\\\\$\" \"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\app\\\\game\\\\events.ts\")"
+      "Bash(grep -rn \"label:.*\\\\\\\\\\\\$\\\\|description:.*\\\\\\\\\\\\$\" \"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\app\\\\game\\\\events.ts\")",
+      "Bash(copy *)",
+      "Bash(node *)",
+      "PowerShell($img = [System.Drawing.Image]::FromFile\\(\"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\public\\\\cards\\\\BlankCard.png\"\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))"
     ]
   }
 }

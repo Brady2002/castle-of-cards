@@ -10,6 +10,20 @@ const RARITY_CLASS: Record<string, string> = {
   rare: 'rarity-rare',
 }
 
+// Card name -> art filename. "Shell Strike" -> "shell-strike.png", "Sun's Blessing" -> "suns-blessing.png".
+export function cardArtFilename(cardName: string): string {
+  const slug = cardName
+    .toLowerCase()
+    .replace(/['']/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${slug}.png`
+}
+
+export function cardArtPath(cardName: string): string {
+  return `/cards/${cardArtFilename(cardName)}`
+}
+
 type Props = {
   card: CardInstance
   playable: boolean
@@ -24,73 +38,167 @@ export default function CardComponent({ card, playable, selected, onClick, onMou
   const def = getDef(card)
   const isAttack = def.type === 'attack'
   const isPower = def.type === 'power'
-  const typeClass = isAttack ? 'game-card-attack' : isPower ? 'game-card-power' : 'game-card-skill'
-  const dividerClass = isAttack ? 'border-red-300/50' : isPower ? 'border-purple-300/60' : 'border-blue-300/50'
-  const typeLabelClass = isAttack ? 'text-red-500' : isPower ? 'text-purple-600' : 'text-blue-500'
+  const typeLabelClass = isAttack ? 'text-red-700' : isPower ? 'text-purple-700' : 'text-blue-700'
 
-  const w = compact ? 'w-[170px]' : 'w-[200px]'
-  const minH = compact ? 'min-h-[235px]' : 'min-h-[280px]'
+  const [artFailed, setArtFailed] = React.useState(false)
+  React.useEffect(() => { setArtFailed(false) }, [def.name])
+
+  const w = compact ? 195 : 230
+  const h = compact ? 255 : 300
+
+  // Hue-rotate the salmon template to differentiate types. Attacks keep the original tone.
+  const templateFilter = isPower ? 'hue-rotate(220deg) saturate(0.85)' : !isAttack ? 'hue-rotate(170deg) saturate(0.75)' : 'none'
 
   return (
     <div
       onClick={playable || onClick ? onClick : undefined}
       onMouseDown={onMouseDown}
+      style={{
+        width: w,
+        height: h,
+        borderRadius: 0,
+        boxShadow: 'none',
+        background: 'transparent',
+      }}
       className={`
-        game-card ${typeClass} ${RARITY_CLASS[def.rarity]}
+        game-card ${RARITY_CLASS[def.rarity]}
         ${playable ? 'playable' : !onClick ? 'disabled' : 'playable'}
         ${selected ? 'selected' : ''}
         ${dragging ? 'dragging' : ''}
-        ${w} ${minH} border-2 p-4 flex flex-col items-center gap-2 select-none
+        relative select-none
       `}
     >
-      {/* Energy cost badge */}
-      <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
+      {/* Template background as its own layer so we can hue-rotate without affecting text/art */}
+      <div
+        aria-hidden
         style={{
-          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-          border: '3px solid #d97706',
-          color: '#78350f',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.28)',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'url(/cards/BlankCard.png)',
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated',
+          filter: templateFilter,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Energy cost — centered on the circle in the top-left of the template (circle center: 11.5%, 7.5%) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '8.25%',
+          left: '12.25%',
+          transform: 'translate(-50%, -50%)',
+          color: '#5a3a2a',
+          fontWeight: 900,
+          fontSize: compact ? 22 : 26,
+          lineHeight: 1,
+          textShadow: '0 1px 0 rgba(255,255,255,0.6)',
         }}
       >
         {def.energyCost}
       </div>
 
-      {/* Card icon */}
-      <div className="mt-1.5">
-        <CardIcon cardName={def.name} type={def.type} size={compact ? 40 : 64} />
-      </div>
-
-      {/* Name */}
-      <div className={`font-bold text-gray-800 text-center leading-tight ${compact ? 'text-[17px]' : 'text-[21px]'}`}>
+      {/* Title — sits above the art rectangle (between card top y=6.7% and art top y=18.8%), right of the circle */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '9%',
+          left: '18%',
+          width: '70%',
+          height: '10%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          color: '#5a3a2a',
+          fontWeight: 800,
+          lineHeight: 1.05,
+          fontSize: compact ? 13 : 15,
+        }}
+      >
         {def.name}
       </div>
 
-      {/* Divider */}
-      <div className={`w-3/4 border-t ${dividerClass}`} />
+      {/* Card art — slotted into the upper rectangle on the template (measured from BlankCard.png).
+          Falls back to the SVG CardIcon when the PNG is missing. */}
+      {artFailed ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: '19.5%',
+            left: '16.1%',
+            width: '68.2%',
+            height: '35.3%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <CardIcon cardName={def.name} type={def.type} size={compact ? 78 : 92} />
+        </div>
+      ) : (
+        <img
+          src={cardArtPath(def.name)}
+          alt={def.name}
+          style={{
+            position: 'absolute',
+            top: '19.5%',
+            left: '16.1%',
+            width: '68.2%',
+            height: '35.3%',
+            objectFit: 'cover',
+            imageRendering: 'pixelated',
+            pointerEvents: 'none',
+          }}
+          onError={() => setArtFailed(true)}
+          draggable={false}
+        />
+      )}
 
-      {/* Type label */}
-      <div className={`text-[14px] font-bold uppercase tracking-wider ${typeLabelClass}`}>
-        {def.type}
-      </div>
-
-      {/* Description */}
-      <div className={`text-gray-700 text-center leading-snug ${compact ? 'text-[14px]' : 'text-[16px]'}`}>
+      {/* Description — fills the body area between art and bottom strip (55%..85%) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '58%',
+          left: '8%',
+          width: '84%',
+          height: '26%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          color: '#3f2a1f',
+          lineHeight: 1.2,
+          fontWeight: 600,
+          fontSize: compact ? 13 : 15,
+        }}
+      >
         {def.description}
       </div>
 
-      {/* Rarity dots */}
-      <div className="flex gap-1 mt-auto pt-1">
-        {def.rarity === 'common' && <RarityDot color="#a0845c" />}
-        {def.rarity === 'uncommon' && <><RarityDot color="#0284c7" /><RarityDot color="#0284c7" /></>}
-        {def.rarity === 'rare' && <><RarityDot color="#9333ea" /><RarityDot color="#9333ea" /><RarityDot color="#9333ea" /></>}
+      {/* Type label — bottom strip of the template (y=85.3%..93.3%) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '85.3%',
+          left: '6%',
+          width: '88%',
+          height: '8%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: compact ? 11 : 13,
+          fontWeight: 800,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+        }}
+        className={typeLabelClass}
+      >
+        {def.type}
       </div>
     </div>
-  )
-}
-
-function RarityDot({ color }: { color: string }) {
-  return (
-    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
   )
 }
 
