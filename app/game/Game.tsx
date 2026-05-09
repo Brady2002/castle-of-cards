@@ -66,6 +66,70 @@ export default function Game() {
     return () => clearTimeout(timer)
   }, [state?.phase])
 
+  // Combat music — loop LowTide while in active combat, fade out when leaving.
+  // Browsers block autoplay until a user interaction; the first play() may reject
+  // silently (caught below), and subsequent phase changes after the player has
+  // clicked anything will succeed.
+  const combatAudioRef = useRef<HTMLAudioElement | null>(null)
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => {
+    const TARGET_VOLUME = 0.5
+    const FADE_MS = 2500
+    const FADE_STEPS = 50
+    if (!combatAudioRef.current) {
+      const a = new Audio('/audio/LowTide.wav')
+      a.loop = true
+      a.volume = TARGET_VOLUME
+      combatAudioRef.current = a
+    }
+    const audio = combatAudioRef.current
+    const inCombat =
+      state?.phase === 'combat_player_turn' ||
+      state?.phase === 'combat_enemy_turn' ||
+      state?.phase === 'targeting'
+    // Cancel any in-flight fade so re-entering combat snaps back to full volume
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current)
+      fadeIntervalRef.current = null
+    }
+    if (inCombat) {
+      audio.volume = TARGET_VOLUME
+      void audio.play().catch(() => {})
+      return
+    }
+    if (audio.paused || audio.volume <= 0) {
+      audio.pause()
+      audio.volume = TARGET_VOLUME
+      return
+    }
+    const stepDelta = audio.volume / FADE_STEPS
+    fadeIntervalRef.current = setInterval(() => {
+      const a = combatAudioRef.current
+      if (!a) return
+      const next = Math.max(0, a.volume - stepDelta)
+      a.volume = next
+      if (next <= 0) {
+        a.pause()
+        a.volume = TARGET_VOLUME
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current)
+          fadeIntervalRef.current = null
+        }
+      }
+    }, FADE_MS / FADE_STEPS)
+  }, [state?.phase])
+
+  useEffect(() => {
+    return () => {
+      if (fadeIntervalRef.current) {
+        clearInterval(fadeIntervalRef.current)
+        fadeIntervalRef.current = null
+      }
+      combatAudioRef.current?.pause()
+      combatAudioRef.current = null
+    }
+  }, [])
+
   // Cancel an active drag if the player's turn ends out from under us
   // (enemy turn, victory, etc.) — otherwise the arrow would linger.
   useEffect(() => {
