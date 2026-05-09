@@ -32,9 +32,10 @@ type Props = {
   onMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void
   dragging?: boolean
   compact?: boolean
+  drawDelayMs?: number
 }
 
-export default function CardComponent({ card, playable, selected, onClick, onMouseDown, dragging, compact }: Props) {
+export default function CardComponent({ card, playable, selected, onClick, onMouseDown, dragging, compact, drawDelayMs }: Props) {
   const def = getDef(card)
   const isAttack = def.type === 'attack'
   const isPower = def.type === 'power'
@@ -49,6 +50,8 @@ export default function CardComponent({ card, playable, selected, onClick, onMou
   // Hue-rotate the salmon template to differentiate types. Attacks keep the original tone.
   const templateFilter = isPower ? 'hue-rotate(220deg) saturate(0.85)' : !isAttack ? 'hue-rotate(170deg) saturate(0.75)' : 'none'
 
+  const drawing = drawDelayMs !== undefined
+
   return (
     <div
       onClick={playable || onClick ? onClick : undefined}
@@ -59,12 +62,14 @@ export default function CardComponent({ card, playable, selected, onClick, onMou
         borderRadius: 0,
         boxShadow: 'none',
         background: 'transparent',
+        ...(drawing ? { animationDelay: `${drawDelayMs}ms` } : null),
       }}
       className={`
         game-card ${RARITY_CLASS[def.rarity]}
         ${playable ? 'playable' : !onClick ? 'disabled' : 'playable'}
         ${selected ? 'selected' : ''}
         ${dragging ? 'dragging' : ''}
+        ${drawing ? 'drawing' : ''}
         relative select-none
       `}
     >

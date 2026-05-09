@@ -102,6 +102,29 @@ body {
   z-index: 6;
 }
 
+/* Card deal-in animation — fly from the draw pile (bottom-left of the hand)
+   into the card's flex slot. animation-delay (set inline per card) staggers
+   the deal so cards appear one at a time. `both` fill keeps cards invisible
+   during their pre-delay so they don't pop in early. */
+.game-card.drawing {
+  animation: card-deal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+
+@keyframes card-deal {
+  0% {
+    opacity: 0;
+    transform: translate(-180px, 120px) rotate(-14deg) scale(0.55);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0) scale(1);
+  }
+}
+
 .game-card-attack {
   background: linear-gradient(145deg, #fef2f2 0%, #fecaca 100%);
 }

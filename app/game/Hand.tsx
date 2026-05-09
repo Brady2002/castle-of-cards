@@ -13,9 +13,10 @@ type Props = {
   onPeekDiscard: () => void
   draggingCardId: string | null
   onCardMouseDown: (cardId: string, e: React.MouseEvent<HTMLDivElement>) => void
+  drawDelays: Map<string, number>
 }
 
-export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, draggingCardId, onCardMouseDown }: Props) {
+export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, draggingCardId, onCardMouseDown, drawDelays }: Props) {
   const isPlayerTurn = state.phase === 'combat_player_turn' || state.phase === 'targeting'
   const dragActive = draggingCardId !== null
 
@@ -48,6 +49,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, dragg
           {state.hand.map(card => {
             const playable = isPlayerTurn && canPlayCard(state, card)
             const isDragging = card.id === draggingCardId
+            const drawDelayMs = drawDelays.get(card.id)
 
             return (
               <CardComponent
@@ -55,6 +57,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, dragg
                 card={card}
                 playable={playable}
                 dragging={isDragging}
+                drawDelayMs={drawDelayMs}
                 onMouseDown={playable ? (e) => onCardMouseDown(card.id, e) : undefined}
               />
             )

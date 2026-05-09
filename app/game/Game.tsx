@@ -104,6 +104,46 @@ export default function Game() {
     }
   }, [])
 
+  // Card draw — fire card.wav and animate each new card into hand on a stagger
+  // so a 5-card draw fans out one card at a time. `drawDelays` maps cardId to
+  // its animation-delay in ms; entries are cleared after the animation finishes
+  // so the .drawing class doesn't linger and fight hover transforms.
+  const STAGGER_MS = 90
+  const ANIM_MS = 420
+  const prevHandIdsRef = useRef<Set<string>>(new Set())
+  const [drawDelays, setDrawDelays] = useState<Map<string, number>>(new Map())
+  useEffect(() => {
+    if (!state) return
+    const newIds: string[] = []
+    const currentIds = new Set<string>()
+    for (const card of state.hand) {
+      currentIds.add(card.id)
+      if (!prevHandIdsRef.current.has(card.id)) newIds.push(card.id)
+    }
+    prevHandIdsRef.current = currentIds
+    if (newIds.length === 0) return
+
+    setDrawDelays(prev => {
+      const next = new Map(prev)
+      newIds.forEach((id, i) => next.set(id, i * STAGGER_MS))
+      return next
+    })
+    const sfxTimers = newIds.map((_, i) =>
+      window.setTimeout(() => playSfx('/audio/card.wav', 0.45), i * STAGGER_MS)
+    )
+    const clearTimer = window.setTimeout(() => {
+      setDrawDelays(prev => {
+        const next = new Map(prev)
+        newIds.forEach(id => next.delete(id))
+        return next
+      })
+    }, (newIds.length - 1) * STAGGER_MS + ANIM_MS + 60)
+    return () => {
+      sfxTimers.forEach(t => window.clearTimeout(t))
+      window.clearTimeout(clearTimer)
+    }
+  }, [state?.hand])
+
   // Combat music — loop LowTide while in active combat, fade out when leaving.
   // Browsers block autoplay until a user interaction; the first play() may reject
   // silently (caught below), and subsequent phase changes after the player has
@@ -242,6 +282,7 @@ export default function Game() {
     if (!state) return
     const card = state.hand.find(c => c.id === cardId)
     if (!card || !canPlayCard(state, card)) return
+    playSfx('/audio/card.wav', 0.5)
 
     const cardEl = e.currentTarget
     const rect = cardEl.getBoundingClientRect()
@@ -353,6 +394,7 @@ export default function Game() {
         onPeekDiscard={() => setPeek('discard')}
         draggingCardId={drag?.cardId ?? null}
         onCardMouseDown={startDrag}
+        drawDelays={drawDelays}
       />
 
       {/* Drag arrow overlay */}

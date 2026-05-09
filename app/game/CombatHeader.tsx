@@ -76,9 +76,9 @@ export default function CombatHeader({
           <StatChip
             color="castle"
             icon={
-              <svg width="28" height="28" viewBox="0 0 16 16">
-                <path d="M2 13 L2 7 L4 7 L4 5 L6 5 L6 7 L7 7 L7 4 L9 4 L9 7 L10 7 L10 5 L12 5 L12 7 L14 7 L14 13 Z" fill="#fcd34d" stroke="#78350f" strokeWidth="1" strokeLinejoin="round" />
-              </svg>
+              <span style={{ fontSize: 24, lineHeight: 1, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                🏰
+              </span>
             }
             value={`${castleScore}/50`}
           />
