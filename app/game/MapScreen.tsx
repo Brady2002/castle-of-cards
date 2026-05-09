@@ -87,7 +87,7 @@ export default function MapScreen({ state, dispatch }: Props) {
         {/* Legend */}
         <aside className="panel w-[340px] hidden md:flex flex-col self-start sticky top-4" style={{ padding: '28px 32px' }}>
           <div
-            className="font-bold text-amber-900 text-2xl border-b border-amber-700/20"
+            className="font-bold text-pink-900 text-2xl border-b border-pink-400/40"
             style={{ paddingBottom: 20, marginBottom: 28, paddingLeft: 4, paddingRight: 4 }}
           >
             Legend
@@ -108,7 +108,7 @@ export default function MapScreen({ state, dispatch }: Props) {
             })}
           </div>
           <div
-            className="border-t border-amber-700/20 text-base text-amber-800/80 leading-relaxed"
+            className="border-t border-pink-400/40 text-base text-pink-800/80 leading-relaxed"
             style={{ marginTop: 28, paddingTop: 20, paddingLeft: 4, paddingRight: 4 }}
           >
             Glowing nodes are reachable. Pick a node to begin.

@@ -14,7 +14,8 @@
       "Bash(grep -rn \"label:.*\\\\\\\\\\\\$\\\\|description:.*\\\\\\\\\\\\$\" \"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\app\\\\game\\\\events.ts\")",
       "Bash(copy *)",
       "Bash(node *)",
-      "PowerShell($img = [System.Drawing.Image]::FromFile\\(\"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\public\\\\cards\\\\BlankCard.png\"\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))"
+      "PowerShell($img = [System.Drawing.Image]::FromFile\\(\"C:\\\\Users\\\\bspen\\\\OneDrive\\\\Desktop\\\\Game Jam 2026\\\\sandcastle\\\\public\\\\cards\\\\BlankCard.png\"\\); \"$\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "Bash(npx --no-install tsc --noEmit -p .)"
     ]
   }
 }

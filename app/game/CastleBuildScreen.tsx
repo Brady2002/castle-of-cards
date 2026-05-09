@@ -36,9 +36,9 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
         {/* Shop */}
         <div className="flex-1 flex flex-col gap-5 min-w-0">
           <div className="panel p-7 flex-1">
-            <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-amber-700/20">
-              <div className="font-bold text-amber-900 text-2xl">Castle Parts</div>
-              <div className="text-sm text-amber-700/80 font-bold tracking-wide uppercase">
+            <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-pink-400/40">
+              <div className="font-bold text-pink-900 text-2xl">Castle Parts</div>
+              <div className="text-sm text-pink-700/80 font-bold tracking-wide uppercase">
                 {state.castle.length}/{ALL_PARTS.length} built
               </div>
             </div>
@@ -59,14 +59,14 @@ export default function CastleBuildScreen({ state, dispatch }: Props) {
             <div className="flex items-center gap-4 flex-1">
               <div className="shop-rest-icon">
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                  <path d="M5 22 L5 16 Q5 10 12 10 L20 10 Q27 10 27 16 L27 22" fill="#fde68a" stroke="#a16207" strokeWidth="2" strokeLinejoin="round" />
-                  <rect x="3" y="22" width="26" height="6" rx="1.5" fill="#a16207" stroke="#78350f" strokeWidth="1.5" />
-                  <path d="M9 16 Q9 13 13 13 L19 13 Q23 13 23 16 L23 19 L9 19 Z" fill="#fff" stroke="#a16207" strokeWidth="1" />
+                  <path d="M5 22 L5 16 Q5 10 12 10 L20 10 Q27 10 27 16 L27 22" fill="#fbcfe8" stroke="#be185d" strokeWidth="2" strokeLinejoin="round" />
+                  <rect x="3" y="22" width="26" height="6" rx="1.5" fill="#f9a8d4" stroke="#be185d" strokeWidth="1.5" />
+                  <path d="M9 16 Q9 13 13 13 L19 13 Q23 13 23 16 L23 19 L9 19 Z" fill="#fff" stroke="#be185d" strokeWidth="1" />
                 </svg>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="font-bold text-amber-900 text-xl">Rest</span>
-                <span className="text-amber-800/75 text-base inline-flex items-center gap-1.5">
+                <span className="font-bold text-pink-900 text-xl">Rest</span>
+                <span className="text-pink-800/75 text-base inline-flex items-center gap-1.5">
                   Heal {REST_HEAL} HP for
                   <SandDollarIcon size={18} />
                   {REST_COST}
@@ -138,13 +138,13 @@ function PartButton({ partType, state, dispatch }: {
         <span className="font-bold text-lg capitalize text-gray-900">
           {owned ? '✓ ' : ''}{partType}
         </span>
-        <span className={`text-sm font-bold ${!meetsPrereq && !owned ? 'text-gray-400' : 'text-amber-700'}`}>
+        <span className={`text-sm font-bold ${!meetsPrereq && !owned ? 'text-gray-400' : 'text-pink-700'}`}>
           {statusLabel}
         </span>
       </div>
       <div className="text-sm text-gray-600 leading-snug mb-2.5">{def.bonus}</div>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-amber-600">+{def.score} score</span>
+        <span className="text-sm font-bold text-pink-600">+{def.score} score</span>
         {!owned && !meetsPrereq && (
           <svg width="16" height="16" viewBox="0 0 16 16" className="opacity-50">
             <rect x="5" y="8" width="6" height="6" rx="1" fill="#999" />

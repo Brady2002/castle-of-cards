@@ -14,9 +14,12 @@ type Props = {
   draggingCardId: string | null
   onCardMouseDown: (cardId: string, e: React.MouseEvent<HTMLDivElement>) => void
   drawDelays: Map<string, number>
+  // Vulnerable stacks on the enemy currently being aimed at by the dragged
+  // single-target card. Applied only to that card's damage display.
+  hoveredTargetVulnerable: number
 }
 
-export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, draggingCardId, onCardMouseDown, drawDelays }: Props) {
+export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, draggingCardId, onCardMouseDown, drawDelays, hoveredTargetVulnerable }: Props) {
   const isPlayerTurn = state.phase === 'combat_player_turn' || state.phase === 'targeting'
   const dragActive = draggingCardId !== null
 
@@ -44,7 +47,7 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, dragg
         {/* === Cards === */}
         <div className="flex-1 flex items-end justify-center gap-6 flex-wrap min-h-[210px] py-2">
           {state.hand.length === 0 && (
-            <span className="text-amber-200/70 italic text-sm py-10">No cards in hand</span>
+            <span className="text-pink-800/70 italic text-sm py-10">No cards in hand</span>
           )}
           {state.hand.map(card => {
             const playable = isPlayerTurn && canPlayCard(state, card)
@@ -59,6 +62,8 @@ export default function Hand({ state, dispatch, onPeekDraw, onPeekDiscard, dragg
                 dragging={isDragging}
                 drawDelayMs={drawDelayMs}
                 onMouseDown={playable ? (e) => onCardMouseDown(card.id, e) : undefined}
+                playerStatus={state.playerStatus}
+                targetVulnerable={isDragging ? hoveredTargetVulnerable : 0}
               />
             )
           })}

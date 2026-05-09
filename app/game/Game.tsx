@@ -375,6 +375,13 @@ export default function Game() {
     return false
   }
 
+  // Vulnerable stacks on the enemy currently being aimed at — used by the
+  // dragged card to show post-vulnerability damage.
+  const hoveredEnemy = drag?.mode === 'enemy_single' && drag.hoveredEnemyId
+    ? state.enemies.find(e => e.id === drag.hoveredEnemyId)
+    : null
+  const hoveredTargetVulnerable = hoveredEnemy?.status.vulnerable ?? 0
+
   return (
     <div className="game-bg flex flex-col px-4 pt-5" style={{ minHeight: '100vh' }}>
       {/* Header */}
@@ -409,6 +416,7 @@ export default function Game() {
                 targetable={false}
                 highlighted={isEnemyHighlighted(enemy.id)}
                 acting={actingEnemies.get(enemy.id)}
+                playerVulnerable={state.playerStatus.vulnerable}
               />
             ))}
           </div>
@@ -433,10 +441,11 @@ export default function Game() {
         draggingCardId={drag?.cardId ?? null}
         onCardMouseDown={startDrag}
         drawDelays={drawDelays}
+        hoveredTargetVulnerable={hoveredTargetVulnerable}
       />
 
-      {/* Drag arrow overlay */}
-      {drag && <DragArrow drag={drag} />}
+      {/* Drag arrow overlay — hidden for self-target cards; the player highlight conveys the target. */}
+      {drag && drag.mode !== 'self' && <DragArrow drag={drag} />}
 
       {/* Peek modals */}
       {peek === 'draw' && (
@@ -525,13 +534,13 @@ function DragArrow({ drag }: { drag: DragState }) {
   const angle = Math.atan2(dirY, dirX) * 180 / Math.PI
 
   const color =
-    drag.mode === 'enemy_single' ? '#ef4444' :
-    drag.mode === 'enemy_all' ? '#f59e0b' :
-    '#3b82f6'
+    drag.mode === 'enemy_single' ? '#fb7185' :
+    drag.mode === 'enemy_all' ? '#fb923c' :
+    '#a78bfa'
   const glow =
-    drag.mode === 'enemy_single' ? 'rgba(239, 68, 68, 0.7)' :
-    drag.mode === 'enemy_all' ? 'rgba(245, 158, 11, 0.7)' :
-    'rgba(59, 130, 246, 0.7)'
+    drag.mode === 'enemy_single' ? 'rgba(251, 113, 133, 0.7)' :
+    drag.mode === 'enemy_all' ? 'rgba(251, 146, 60, 0.7)' :
+    'rgba(167, 139, 250, 0.7)'
 
   // Inline style + explicit width/height attributes so the SVG's coordinate
   // system maps 1:1 to viewport pixels regardless of any ancestor styling.

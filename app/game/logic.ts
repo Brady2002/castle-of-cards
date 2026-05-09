@@ -67,7 +67,7 @@ function emptyBonuses(): CastleBonuses {
 }
 
 // Damage calc: base + strength, then modified by weak (deal 25% less), then target vuln (take 50% more)
-function calcDamage(base: number, attackerStrength: number, attackerWeak: number, targetVuln: number): number {
+export function calcDamage(base: number, attackerStrength: number, attackerWeak: number, targetVuln: number): number {
   let dmg = base + attackerStrength
   if (attackerWeak > 0) dmg = Math.floor(dmg * 0.75)
   if (targetVuln > 0) dmg = Math.floor(dmg * 1.5)

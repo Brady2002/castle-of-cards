@@ -3,6 +3,7 @@
 import type { GameState, PowerInstance } from './types'
 import { getDef } from './cards'
 import { CardIcon } from './Card'
+import { StatusBadge, StatusIcon, TooltipCard } from './EnemyView'
 
 type Props = {
   state: GameState
@@ -44,110 +45,90 @@ export default function PlayerView({ state, highlighted }: Props) {
 
       {/* Character art */}
       <div className="relative mb-2">
-        <PlayerArt />
+        <img
+          src="/player.png"
+          alt="Player"
+          width={290}
+          height={290}
+          style={{ width: 290, height: 290, objectFit: 'contain', imageRendering: 'pixelated' }}
+          draggable={false}
+        />
 
         {/* Block badge — on the character */}
         {state.playerBlock > 0 && (
-          <div className="absolute top-2 -left-3 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-blue-900"
-            style={{ background: 'linear-gradient(135deg, #93c5fd, #60a5fa)', border: '2px solid #2563eb', boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
+          <div className="absolute top-2 -left-3 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-indigo-900"
+            style={{ background: 'linear-gradient(135deg, #ddd6fe, #c4b5fd)', border: '2px solid #a78bfa', boxShadow: '0 2px 6px rgba(167, 139, 250, 0.4)' }}>
             {state.playerBlock}
           </div>
         )}
       </div>
 
       {/* Name + HP */}
-      <div className="text-[24px] font-bold text-center text-amber-900 mb-2">You</div>
+      <div className="text-[24px] font-bold text-center text-pink-900 mb-2">You</div>
       <div className="w-[290px]">
-        <div className="h-[18px] rounded-full overflow-hidden border-2" style={{ background: 'rgba(0,0,0,0.18)', borderColor: 'rgba(0,0,0,0.25)' }}>
+        <div className="h-[18px] rounded-full overflow-hidden border-2" style={{ background: 'rgba(255, 245, 247, 0.55)', borderColor: 'rgba(244, 114, 182, 0.45)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{ width: `${hpPct}%`, background: hpColor }}
           />
         </div>
-        <div className="text-[18px] text-center text-amber-900/80 font-bold mt-1.5">
+        <div className="text-[18px] text-center text-pink-900/80 font-bold mt-1.5">
           {state.playerHp}/{state.playerMaxHp}
         </div>
       </div>
 
-      {/* Status pills */}
+      {/* Status pills — match the enemy card style for visual consistency */}
       {(state.playerStatus.vulnerable > 0 || state.playerStatus.weak > 0 || state.playerStatus.strength > 0) && (
-        <div className="flex flex-wrap gap-2 justify-center mt-3 max-w-[320px]">
+        <div className="flex gap-1 justify-center mt-3">
           {state.playerStatus.vulnerable > 0 && (
-            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#92400e', background: '#fef3c7', border: '1px solid #fbbf24' }}>
-              Vuln {state.playerStatus.vulnerable}
-            </span>
+            <StatusBadge kind="vulnerable" value={state.playerStatus.vulnerable} />
           )}
           {state.playerStatus.weak > 0 && (
-            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#5b21b6', background: '#ede9fe', border: '1px solid #c4b5fd' }}>
-              Weak {state.playerStatus.weak}
-            </span>
+            <StatusBadge kind="weak" value={state.playerStatus.weak} />
           )}
           {state.playerStatus.strength > 0 && (
-            <span className="text-[16px] font-bold px-3 py-1 rounded-full" style={{ color: '#991b1b', background: '#fee2e2', border: '1px solid #fca5a5' }}>
-              Str +{state.playerStatus.strength}
-            </span>
+            <StatusBadge kind="strength" value={state.playerStatus.strength} />
           )}
         </div>
+      )}
+
+      {/* Hover tooltip — mirrors the enemy tooltip stack. Only renders when at
+          least one status is active; otherwise the empty stack would still
+          claim hover area. */}
+      <PlayerTooltip status={state.playerStatus} />
+    </div>
+  )
+}
+
+function PlayerTooltip({ status }: { status: GameState['playerStatus'] }) {
+  if (status.vulnerable <= 0 && status.weak <= 0 && status.strength <= 0) return null
+  return (
+    <div className="character-tooltip">
+      {status.vulnerable > 0 && (
+        <TooltipCard
+          title="Vulnerable"
+          accent="vulnerable"
+          icon={<StatusIcon kind="vulnerable" />}
+          body={<>You take <span className="tooltip-emph">50% more</span> damage from attacks. Decreases by 1 each turn. ({status.vulnerable} left)</>}
+        />
+      )}
+      {status.weak > 0 && (
+        <TooltipCard
+          title="Weak"
+          accent="weak"
+          icon={<StatusIcon kind="weak" />}
+          body={<>You deal <span className="tooltip-emph">25% less</span> attack damage. Decreases by 1 each turn. ({status.weak} left)</>}
+        />
+      )}
+      {status.strength > 0 && (
+        <TooltipCard
+          title="Strength"
+          accent="strength"
+          icon={<StatusIcon kind="strength" />}
+          body={<>Your attacks deal <span className="tooltip-emph">+{status.strength}</span> damage.</>}
+        />
       )}
     </div>
   )
 }
 
-// Beach-kid character: bucket helmet, striped tee, shovel + starfish shield
-function PlayerArt() {
-  return (
-    <svg width="290" height="385" viewBox="0 0 120 160" className="drop-shadow-md">
-      {/* Shovel (back hand, raised) */}
-      <rect x="92" y="36" width="3" height="46" rx="1.5" fill="#a16207" stroke="#78350f" strokeWidth="1" />
-      <path d="M85 16 L102 16 L101 34 L86 34 Z" fill="#cbd5e1" stroke="#475569" strokeWidth="1.5" />
-      <path d="M88 18 L88 32 M93 18 L93 32 M98 18 L98 32" stroke="#94a3b8" strokeWidth="0.6" opacity="0.7" />
-
-      {/* Starfish shield (front, on left arm) */}
-      <g transform="translate(30 78)">
-        <path d="M0 -16 L5 -5 L17 -5 L7 3 L11 14 L0 7 L-11 14 L-7 3 L-17 -5 L-5 -5 Z"
-          fill="#ff6b6b" stroke="#c0392b" strokeWidth="1.5" strokeLinejoin="round" />
-        <circle cx="0" cy="-4" r="1.2" fill="#7f1d1d" />
-        <circle cx="-4" cy="2" r="1" fill="#7f1d1d" />
-        <circle cx="4" cy="2" r="1" fill="#7f1d1d" />
-      </g>
-
-      {/* Face */}
-      <ellipse cx="58" cy="50" rx="14" ry="13" fill="#fde4ca" stroke="#c4956a" strokeWidth="1.5" />
-      {/* Eyes */}
-      <circle cx="52" cy="48" r="1.6" fill="#1f2937" />
-      <circle cx="64" cy="48" r="1.6" fill="#1f2937" />
-      {/* Cheeks */}
-      <circle cx="48" cy="54" r="2" fill="#fca5a5" opacity="0.55" />
-      <circle cx="68" cy="54" r="2" fill="#fca5a5" opacity="0.55" />
-      {/* Smile */}
-      <path d="M53 56 Q58 60 63 56" stroke="#5b3a1a" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-
-      {/* Body — striped red & white tee */}
-      <path d="M40 64 L76 64 L80 102 L36 102 Z" fill="#dc2626" stroke="#7f1d1d" strokeWidth="1.5" />
-      <line x1="38" y1="74" x2="78" y2="74" stroke="#fff" strokeWidth="2" />
-      <line x1="38" y1="84" x2="79" y2="84" stroke="#fff" strokeWidth="2" />
-      <line x1="37" y1="94" x2="79" y2="94" stroke="#fff" strokeWidth="2" />
-
-      {/* Arms */}
-      {/* Right arm holding shovel up */}
-      <path d="M76 66 Q88 50 92 38" fill="none" stroke="#fde4ca" strokeWidth="6" strokeLinecap="round" />
-      <path d="M76 66 Q88 50 92 38" fill="none" stroke="#c4956a" strokeWidth="1" strokeLinecap="round" />
-      {/* Left arm holding shield */}
-      <path d="M40 66 L32 86" fill="none" stroke="#fde4ca" strokeWidth="6" strokeLinecap="round" />
-      <path d="M40 66 L32 86" fill="none" stroke="#c4956a" strokeWidth="1" strokeLinecap="round" />
-
-      {/* Shorts — blue */}
-      <path d="M36 102 L80 102 L82 126 L60 124 L58 124 L36 126 Z" fill="#1d4ed8" stroke="#1e3a8a" strokeWidth="1.5" />
-
-      {/* Legs */}
-      <rect x="42" y="124" width="10" height="20" rx="2" fill="#fde4ca" stroke="#c4956a" strokeWidth="1" />
-      <rect x="64" y="124" width="10" height="20" rx="2" fill="#fde4ca" stroke="#c4956a" strokeWidth="1" />
-
-      {/* Sandals */}
-      <ellipse cx="47" cy="148" rx="8" ry="3" fill="#7c2d12" stroke="#3f1505" strokeWidth="1" />
-      <ellipse cx="69" cy="148" rx="8" ry="3" fill="#7c2d12" stroke="#3f1505" strokeWidth="1" />
-      <line x1="47" y1="146" x2="47" y2="142" stroke="#3f1505" strokeWidth="1" />
-      <line x1="69" y1="146" x2="69" y2="142" stroke="#3f1505" strokeWidth="1" />
-    </svg>
-  )
-}

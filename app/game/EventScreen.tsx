@@ -73,7 +73,7 @@ export default function EventScreen({ state, dispatch }: Props) {
             </div>
           </div>
 
-          <div className="px-8 py-5 border-t-2 border-amber-700/25">
+          <div className="px-8 py-5 border-t-2 border-pink-400/40">
             <button
               className="reward-btn reward-btn-neutral w-full"
               onClick={() => dispatch({ type: 'skip_event_remove' })}

@@ -1,8 +1,24 @@
 'use client'
 
-import type { ReactNode } from 'react'
-import type { EnemyInstance } from './types'
+import { useEffect, useState, type ReactNode } from 'react'
+import type { EnemyInstance, StatusEffects } from './types'
 import { ENEMY_DEFS } from './enemies'
+import { calcDamage } from './logic'
+
+// Enemies with a hand-drawn PNG in /public/enemies/. Names not listed here
+// (currently just The Tide King) fall back to the procedural SVG below.
+const ENEMY_ART_FILES: Record<string, string> = {
+  'Sand Crab': 'sand-crab.png',
+  'Seagull': 'seagull.png',
+  'Jellyfish': 'jellyfish.png',
+  'Hermit Crab': 'hermit-crab.png',
+  'Pelican': 'pelican.png',
+  'Sea Urchin': 'sea-urchin.png',
+  'Sand Flea': 'sand-flea.png',
+  'Starfish': 'starfish.png',
+  'Giant Coconut Crab': 'coconut-crab.png',
+  'Angry Pelican Flock': 'pelican-flock.png',
+}
 
 type Props = {
   enemy: EnemyInstance
@@ -10,11 +26,12 @@ type Props = {
   highlighted?: boolean
   onClick?: () => void
   acting?: 'attack' | 'defend' | 'buff' | 'debuff'
+  playerVulnerable?: number
 }
 
 const ELITE_BOSS_NAMES = new Set(['Giant Coconut Crab', 'Angry Pelican Flock', 'The Tide King'])
 
-export default function EnemyView({ enemy, targetable, highlighted, onClick, acting }: Props) {
+export default function EnemyView({ enemy, targetable, highlighted, onClick, acting, playerVulnerable = 0 }: Props) {
   const hpPct = (enemy.hp / enemy.maxHp) * 100
   const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#fbbf24' : '#f87171'
   const isEliteOrBoss = ELITE_BOSS_NAMES.has(enemy.defName)
@@ -28,7 +45,7 @@ export default function EnemyView({ enemy, targetable, highlighted, onClick, act
     >
       {/* Enemy Art */}
       <div className="flex justify-center mb-3">
-        <EnemyArt name={enemy.defName} size={isEliteOrBoss ? 200 : 150} />
+        <EnemyImage name={enemy.defName} size={isEliteOrBoss ? 200 : 150} />
       </div>
 
       {/* Name */}
@@ -38,55 +55,55 @@ export default function EnemyView({ enemy, targetable, highlighted, onClick, act
 
       {/* HP Bar */}
       <div className="w-full mb-3.5">
-        <div className="h-[18px] rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.18)' }}>
+        <div className="h-[18px] rounded-full overflow-hidden" style={{ background: 'rgba(255, 245, 247, 0.55)', border: '1px solid rgba(244, 114, 182, 0.4)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{ width: `${hpPct}%`, background: hpColor }}
           />
         </div>
-        <div className="text-[19px] text-center text-gray-600 font-bold mt-1.5">
+        <div className="text-[19px] text-center text-pink-900/70 font-bold mt-1.5">
           {enemy.hp}/{enemy.maxHp}
         </div>
       </div>
 
       {/* Block */}
       {enemy.block > 0 && (
-        <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-[17px] font-bold text-blue-800"
-          style={{ background: 'linear-gradient(135deg, #93c5fd, #60a5fa)', border: '2px solid #3b82f6' }}>
+        <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full flex items-center justify-center text-[17px] font-bold text-indigo-900"
+          style={{ background: 'linear-gradient(135deg, #ddd6fe, #c4b5fd)', border: '2px solid #a78bfa' }}>
           {enemy.block}
         </div>
       )}
 
       {/* Intent */}
       <div className="flex justify-center">
-        <IntentBadge intent={enemy.intent} strength={enemy.status.strength} />
+        <IntentBadge intent={enemy.intent} enemyStatus={enemy.status} playerVulnerable={playerVulnerable} />
       </div>
 
       {/* Status Effects */}
       {(enemy.status.vulnerable > 0 || enemy.status.weak > 0 || enemy.status.strength > 0) && (
         <div className="flex gap-1 justify-center mt-1">
           {enemy.status.vulnerable > 0 && (
-            <StatusBadge label="Vuln" value={enemy.status.vulnerable} color="#f59e0b" bg="#fef3c7" />
+            <StatusBadge kind="vulnerable" value={enemy.status.vulnerable} />
           )}
           {enemy.status.weak > 0 && (
-            <StatusBadge label="Weak" value={enemy.status.weak} color="#8b5cf6" bg="#ede9fe" />
+            <StatusBadge kind="weak" value={enemy.status.weak} />
           )}
           {enemy.status.strength > 0 && (
-            <StatusBadge label="Str" value={enemy.status.strength} color="#dc2626" bg="#fee2e2" />
+            <StatusBadge kind="strength" value={enemy.status.strength} />
           )}
         </div>
       )}
 
       {/* Hover tooltip: intent + active status effects */}
-      <EnemyTooltip enemy={enemy} />
+      <EnemyTooltip enemy={enemy} playerVulnerable={playerVulnerable} />
     </div>
   )
 }
 
-function EnemyTooltip({ enemy }: { enemy: EnemyInstance }) {
+function EnemyTooltip({ enemy, playerVulnerable }: { enemy: EnemyInstance; playerVulnerable: number }) {
   return (
     <div className="enemy-tooltip">
-      <IntentTooltipCard intent={enemy.intent} strength={enemy.status.strength} />
+      <IntentTooltipCard intent={enemy.intent} enemyStatus={enemy.status} playerVulnerable={playerVulnerable} />
       {enemy.status.vulnerable > 0 && (
         <TooltipCard
           title="Vulnerable"
@@ -115,27 +132,41 @@ function EnemyTooltip({ enemy }: { enemy: EnemyInstance }) {
   )
 }
 
-function IntentTooltipCard({ intent, strength }: { intent: EnemyInstance['intent']; strength: number }) {
+// Threat color: enemy damage that's higher than base reads as red (more dangerous),
+// lower as green (weak/etc. taming the threat). Returns null if unmodified.
+function intentDmgColor(base: number, effective: number): string | null {
+  if (effective > base) return '#dc2626'
+  if (effective < base) return '#15803d'
+  return null
+}
+
+function IntentTooltipCard({ intent, enemyStatus, playerVulnerable }: {
+  intent: EnemyInstance['intent']
+  enemyStatus: StatusEffects
+  playerVulnerable: number
+}) {
   switch (intent.type) {
     case 'attack': {
-      const dmg = intent.damage + strength
+      const dmg = calcDamage(intent.damage, enemyStatus.strength, enemyStatus.weak, playerVulnerable)
+      const color = intentDmgColor(intent.damage, dmg)
       return (
         <TooltipCard
           title="Attack"
           accent="attack"
           icon={<IntentIcon kind="attack" />}
-          body={<>Intends to attack for <span className="tooltip-emph">{dmg}</span> damage.</>}
+          body={<>Intends to attack for <span className="tooltip-emph" style={color ? { color } : undefined}>{dmg}</span> damage.</>}
         />
       )
     }
     case 'multi_attack': {
-      const dmg = intent.damage + strength
+      const dmg = calcDamage(intent.damage, enemyStatus.strength, enemyStatus.weak, playerVulnerable)
+      const color = intentDmgColor(intent.damage, dmg)
       return (
         <TooltipCard
           title="Multi-Attack"
           accent="attack"
           icon={<IntentIcon kind="attack" />}
-          body={<>Intends to attack for <span className="tooltip-emph">{dmg}</span> damage <span className="tooltip-emph">{intent.hits}</span> times.</>}
+          body={<>Intends to attack for <span className="tooltip-emph" style={color ? { color } : undefined}>{dmg}</span> damage <span className="tooltip-emph">{intent.hits}</span> times.</>}
         />
       )
     }
@@ -177,7 +208,7 @@ function IntentTooltipCard({ intent, strength }: { intent: EnemyInstance['intent
 
 type Accent = 'attack' | 'defend' | 'buff' | 'debuff' | 'vulnerable' | 'weak' | 'strength'
 
-function TooltipCard({ title, accent, icon, body }: { title: string; accent: Accent; icon: ReactNode; body: ReactNode }) {
+export function TooltipCard({ title, accent, icon, body }: { title: string; accent: Accent; icon: ReactNode; body: ReactNode }) {
   return (
     <div className="tooltip-card">
       <div className={`tooltip-card-title tooltip-accent-${accent}`}>
@@ -219,60 +250,78 @@ function IntentIcon({ kind }: { kind: 'attack' | 'defend' | 'buff' | 'debuff' })
   }
 }
 
-function StatusIcon({ kind }: { kind: 'vulnerable' | 'weak' | 'strength' }) {
+export function StatusIcon({ kind, size = 20 }: { kind: 'vulnerable' | 'weak' | 'strength'; size?: number }) {
   switch (kind) {
     case 'vulnerable':
       return (
-        <svg width="20" height="20" viewBox="0 0 16 16">
+        <svg width={size} height={size} viewBox="0 0 16 16">
           <path d="M8 2 L14 13 L2 13 Z" fill="none" stroke="#fbbf24" strokeWidth="1.6" strokeLinejoin="round" />
           <path d="M8 6 L8 10 M8 11.5 L8 12" stroke="#fbbf24" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       )
     case 'weak':
       return (
-        <svg width="20" height="20" viewBox="0 0 16 16">
+        <svg width={size} height={size} viewBox="0 0 16 16">
           <path d="M3 8 Q5 4 8 8 Q11 12 13 8" fill="none" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" />
           <path d="M2 12 L14 12" stroke="#c4b5fd" strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
         </svg>
       )
     case 'strength':
       return (
-        <svg width="20" height="20" viewBox="0 0 16 16">
+        <svg width={size} height={size} viewBox="0 0 16 16">
           <path d="M3 6 L6 6 L6 3 L10 3 L10 6 L13 6 L13 10 L10 10 L10 13 L6 13 L6 10 L3 10 Z" fill="#fca5a5" />
         </svg>
       )
   }
 }
 
-function StatusBadge({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+const STATUS_BADGE_PALETTE: Record<'vulnerable' | 'weak' | 'strength', { color: string; bg: string; label: string }> = {
+  vulnerable: { color: '#92400e', bg: '#fef3c7', label: 'Vulnerable' },
+  weak: { color: '#5b21b6', bg: '#ede9fe', label: 'Weak' },
+  strength: { color: '#991b1b', bg: '#fee2e2', label: 'Strength' },
+}
+
+export function StatusBadge({ kind, value }: { kind: 'vulnerable' | 'weak' | 'strength'; value: number }) {
+  const { color, bg, label } = STATUS_BADGE_PALETTE[kind]
   return (
-    <span className="text-[15px] font-bold px-2.5 py-1 rounded-full" style={{ color, background: bg }}>
-      {label} {value}
+    <span
+      className="inline-flex items-center gap-1 text-[15px] font-bold px-2.5 py-1 rounded-full"
+      style={{ color, background: bg }}
+      aria-label={`${label}: ${value}`}
+    >
+      <StatusIcon kind={kind} size={14} />
+      <span>{value}</span>
     </span>
   )
 }
 
-function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; strength: number }) {
+function IntentBadge({ intent, enemyStatus, playerVulnerable }: {
+  intent: EnemyInstance['intent']
+  enemyStatus: StatusEffects
+  playerVulnerable: number
+}) {
   switch (intent.type) {
     case 'attack': {
-      const effectiveDmg = intent.damage + strength
+      const effectiveDmg = calcDamage(intent.damage, enemyStatus.strength, enemyStatus.weak, playerVulnerable)
+      const color = intentDmgColor(intent.damage, effectiveDmg)
       return (
         <div className="intent-badge intent-attack">
           <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#dc2626" />
           </svg>
-          <span>{effectiveDmg}</span>
+          <span style={color ? { color, fontWeight: 800 } : undefined}>{effectiveDmg}</span>
         </div>
       )
     }
     case 'multi_attack': {
-      const effectiveDmg = intent.damage + strength
+      const effectiveDmg = calcDamage(intent.damage, enemyStatus.strength, enemyStatus.weak, playerVulnerable)
+      const color = intentDmgColor(intent.damage, effectiveDmg)
       return (
         <div className="intent-badge intent-attack">
           <svg width="20" height="20" viewBox="0 0 16 16">
             <path d="M8 2 L14 14 L8 10 L2 14 Z" fill="#dc2626" />
           </svg>
-          <span>{effectiveDmg}x{intent.hits}</span>
+          <span><span style={color ? { color, fontWeight: 800 } : undefined}>{effectiveDmg}</span>x{intent.hits}</span>
         </div>
       )
     }
@@ -305,6 +354,24 @@ function IntentBadge({ intent, strength }: { intent: EnemyInstance['intent']; st
         </div>
       )
   }
+}
+
+function EnemyImage({ name, size }: { name: string; size: number }) {
+  const file = ENEMY_ART_FILES[name]
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { setFailed(false) }, [name])
+  if (!file || failed) return <EnemyArt name={name} size={size} />
+  return (
+    <img
+      src={`/enemies/${file}`}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ width: size, height: size, objectFit: 'contain', imageRendering: 'pixelated' }}
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function EnemyArt({ name, size }: { name: string; size: number }) {

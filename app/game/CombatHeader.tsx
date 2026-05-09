@@ -30,8 +30,8 @@ export default function CombatHeader({
   const elite = nodeType === 'elite'
 
   const floorLabel = boss ? 'BOSS' : elite ? 'ELITE' : `FLOOR ${Math.min(TOTAL_FLOORS, encounter)}`
-  const floorTextColor = boss ? 'text-red-200' : elite ? 'text-purple-200' : 'text-amber-100'
-  const floorIconColor = boss ? '#fca5a5' : elite ? '#d8b4fe' : '#fcd34d'
+  const floorTextColor = boss ? 'text-rose-700' : elite ? 'text-violet-700' : 'text-pink-800'
+  const floorIconColor = boss ? '#e11d48' : elite ? '#a78bfa' : '#db2777'
 
   return (
     <div className="w-full max-w-7xl">
@@ -47,10 +47,10 @@ export default function CombatHeader({
             <span>{floorLabel}</span>
           </div>
           {turnNumber !== undefined && (
-            <div className="stat-chip text-amber-100 hidden md:inline-flex">
+            <div className="stat-chip text-pink-800 hidden md:inline-flex">
               <svg width="28" height="28" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6.5" stroke="#fcd34d" strokeWidth="1.4" />
-                <path d="M8 4.5 V8 L10.5 9.5" stroke="#fcd34d" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="8" cy="8" r="6.5" stroke="#db2777" strokeWidth="1.4" />
+                <path d="M8 4.5 V8 L10.5 9.5" stroke="#db2777" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
               <span>Turn {turnNumber}</span>
             </div>
@@ -85,7 +85,7 @@ export default function CombatHeader({
 
           {onOpenMap && (
             <>
-              <div className="w-px h-12 bg-amber-200/20 mx-2 hidden sm:block" />
+              <div className="w-px h-12 bg-pink-400/30 mx-2 hidden sm:block" />
 
               {/* Map button */}
               <button
@@ -118,7 +118,7 @@ function StatChip({
   icon: React.ReactNode
   value: string
 }) {
-  const text = color === 'hp' ? 'text-red-100' : color === 'gold' ? 'text-amber-200' : 'text-amber-100'
+  const text = color === 'hp' ? 'text-rose-800' : color === 'gold' ? 'text-orange-700' : 'text-pink-800'
   return (
     <div className={`stat-chip ${text}`}>
       {icon}

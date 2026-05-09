@@ -19,21 +19,21 @@ export default function PilePeekModal({ title, cards, shuffled, onClose }: Props
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 px-7 pt-6 pb-4 border-b-2 border-amber-700/25">
+        <div className="flex items-center justify-between gap-4 px-7 pt-6 pb-4 border-b-2 border-pink-400/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-900/15 border-2 border-amber-700/40">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-pink-200/60 border-2 border-pink-400/60">
               <PileIcon title={title} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-amber-900 leading-tight">{title}</h2>
-              <div className="text-[11px] text-amber-700/80 font-bold tracking-wider uppercase">
+              <h2 className="text-2xl font-bold text-pink-900 leading-tight">{title}</h2>
+              <div className="text-[11px] text-pink-700/80 font-bold tracking-wider uppercase">
                 {cards.length} card{cards.length === 1 ? '' : 's'}
                 {shuffled && <span className="ml-1.5 opacity-70">· shown alphabetically</span>}
               </div>
             </div>
           </div>
           <button
-            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-amber-700/70 text-amber-900 hover:bg-amber-100 cursor-pointer transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-pink-400/70 text-pink-900 hover:bg-pink-100 cursor-pointer transition-colors"
             onClick={onClose}
             aria-label="Close"
             title="Close"
@@ -46,7 +46,7 @@ export default function PilePeekModal({ title, cards, shuffled, onClose }: Props
 
         {/* Body */}
         {cards.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-amber-700/60 italic py-12">
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-pink-700/60 italic py-12">
             <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
               <rect x="6" y="4" width="20" height="24" rx="2" stroke="currentColor" strokeWidth="1.6" strokeDasharray="2.5 2.5" />
             </svg>

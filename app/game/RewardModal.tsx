@@ -53,7 +53,7 @@ export default function RewardModal({ state, dispatch }: Props) {
             </div>
           </div>
 
-          <div className="px-8 py-5 border-t-2 border-amber-700/25">
+          <div className="px-8 py-5 border-t-2 border-pink-400/40">
             <button
               className="reward-btn reward-btn-neutral w-full"
               onClick={() => setShowRemove(false)}

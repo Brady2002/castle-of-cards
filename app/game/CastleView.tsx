@@ -29,7 +29,7 @@ export default function CastleView({ castle }: Props) {
 
   return (
     <div className="panel min-w-[340px] w-[380px] p-6 flex flex-col">
-      <div className="font-bold text-amber-900 text-2xl mb-4 pb-2 border-b border-amber-700/20">Your Castle</div>
+      <div className="font-bold text-pink-900 text-2xl mb-4 pb-2 border-b border-pink-400/40">Your Castle</div>
 
       {/* Render tiers top-to-bottom (3→0) so it looks like a castle */}
       <div className="flex flex-col gap-2 flex-1">
@@ -39,7 +39,7 @@ export default function CastleView({ castle }: Props) {
 
           return (
             <div key={tier} className={`castle-tier ${hasParts ? 'has-parts' : ''}`}>
-              <div className="text-[12px] text-amber-700/65 font-bold uppercase tracking-wider mb-1.5">
+              <div className="text-[12px] text-pink-700/75 font-bold uppercase tracking-wider mb-1.5">
                 {TIER_LABELS[tier]}
               </div>
               {hasParts ? (

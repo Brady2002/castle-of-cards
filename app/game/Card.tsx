@@ -1,8 +1,9 @@
 'use client'
 
 import React from 'react'
-import type { CardInstance } from './types'
+import type { CardEffect, CardInstance, StatusEffects } from './types'
 import { getDef } from './cards'
+import { calcDamage } from './logic'
 
 const RARITY_CLASS: Record<string, string> = {
   common: 'rarity-common',
@@ -24,6 +25,59 @@ export function cardArtPath(cardName: string): string {
   return `/cards/${cardArtFilename(cardName)}`
 }
 
+// Replace the "Deal N damage" portion(s) of a card description with the
+// effective damage given the player's strength/weak and (for single-target)
+// the targeted enemy's vulnerable stack. Color-codes the swapped number:
+// green when the player's damage went up, red when it went down. Cards with
+// no damage effects pass through unchanged.
+function renderCardDescription(
+  description: string,
+  effects: CardEffect[],
+  playerStatus: StatusEffects | undefined,
+  targetVulnerable: number,
+): React.ReactNode {
+  if (!playerStatus) return description
+  const { strength, weak } = playerStatus
+  if (strength === 0 && weak === 0 && targetVulnerable === 0) return description
+
+  // Pull damage bases in description order. Vulnerability only applies to
+  // single-target hits — for AOE we don't know which enemy, so leave that
+  // factor out of the displayed number.
+  const dmgBases: { base: number; isAll: boolean }[] = []
+  for (const eff of effects) {
+    if (eff.kind === 'damage') dmgBases.push({ base: eff.amount, isAll: eff.target === 'all' })
+    else if (eff.kind === 'multi_hit') dmgBases.push({ base: eff.perHit, isAll: false })
+  }
+  if (dmgBases.length === 0) return description
+
+  const parts: React.ReactNode[] = []
+  let remaining = description
+  let key = 0
+  for (const { base, isAll } of dmgBases) {
+    const vuln = isAll ? 0 : targetVulnerable
+    const effective = calcDamage(base, strength, weak, vuln)
+    const pattern = `Deal ${base} damage`
+    const idx = remaining.indexOf(pattern)
+    if (idx === -1) continue
+    if (effective !== base) {
+      // Player POV: more damage = green (good), less = red (bad).
+      const color = effective > base ? '#15803d' : '#b91c1c'
+      parts.push(
+        <React.Fragment key={`d${key++}`}>
+          {`${remaining.substring(0, idx)}Deal `}
+          <span style={{ color, fontWeight: 800 }}>{effective}</span>
+          {' damage'}
+        </React.Fragment>,
+      )
+    } else {
+      parts.push(<React.Fragment key={`d${key++}`}>{`${remaining.substring(0, idx)}${pattern}`}</React.Fragment>)
+    }
+    remaining = remaining.substring(idx + pattern.length)
+  }
+  parts.push(<React.Fragment key={`d${key++}`}>{remaining}</React.Fragment>)
+  return parts
+}
+
 type Props = {
   card: CardInstance
   playable: boolean
@@ -33,13 +87,19 @@ type Props = {
   dragging?: boolean
   compact?: boolean
   drawDelayMs?: number
+  // When provided, "Deal N damage" in the description is recomputed using
+  // calcDamage and color-coded if the result differs from the printed base.
+  playerStatus?: StatusEffects
+  // Vulnerable stack on the enemy this card is currently being aimed at.
+  // Only meaningful for single-target attacks while dragging.
+  targetVulnerable?: number
 }
 
-export default function CardComponent({ card, playable, selected, onClick, onMouseDown, dragging, compact, drawDelayMs }: Props) {
+export default function CardComponent({ card, playable, selected, onClick, onMouseDown, dragging, compact, drawDelayMs, playerStatus, targetVulnerable }: Props) {
   const def = getDef(card)
   const isAttack = def.type === 'attack'
   const isPower = def.type === 'power'
-  const typeLabelClass = isAttack ? 'text-red-700' : isPower ? 'text-purple-700' : 'text-blue-700'
+  const typeLabelClass = isAttack ? 'text-rose-700' : isPower ? 'text-pink-700' : 'text-violet-700'
 
   const [artFailed, setArtFailed] = React.useState(false)
   React.useEffect(() => { setArtFailed(false) }, [def.name])
@@ -47,8 +107,13 @@ export default function CardComponent({ card, playable, selected, onClick, onMou
   const w = compact ? 195 : 230
   const h = compact ? 255 : 300
 
-  // Hue-rotate the salmon template to differentiate types. Attacks keep the original tone.
-  const templateFilter = isPower ? 'hue-rotate(220deg) saturate(0.85)' : !isAttack ? 'hue-rotate(170deg) saturate(0.75)' : 'none'
+  // Hue-rotate the salmon template into a sunset-pastel hue per type:
+  // attack stays peach/coral, skill becomes soft lavender, power becomes cotton-candy pink.
+  const templateFilter = isPower
+    ? 'hue-rotate(325deg) saturate(0.85) brightness(1.04)'
+    : !isAttack
+      ? 'hue-rotate(255deg) saturate(0.55) brightness(1.08)'
+      : 'saturate(0.95) brightness(1.04)'
 
   const drawing = drawDelayMs !== undefined
 
@@ -180,7 +245,7 @@ export default function CardComponent({ card, playable, selected, onClick, onMou
           fontSize: compact ? 13 : 15,
         }}
       >
-        {def.description}
+        <span>{renderCardDescription(def.description, def.effects, playerStatus, targetVulnerable ?? 0)}</span>
       </div>
 
       {/* Type label — bottom strip of the template (y=85.3%..93.3%) */}

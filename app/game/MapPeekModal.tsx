@@ -53,13 +53,13 @@ export default function MapPeekModal({ state, onClose }: Props) {
       <div className="modal-sketchy p-6 w-full max-w-md max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-baseline justify-between mb-3">
           <div>
-            <h2 className="text-xl font-bold text-amber-900">Your Path</h2>
-            <div className="text-[11px] text-amber-700/80 font-bold tracking-wide uppercase">
+            <h2 className="text-xl font-bold text-pink-900">Your Path</h2>
+            <div className="text-[11px] text-pink-700/80 font-bold tracking-wide uppercase">
               Floor {Math.min(TOTAL_FLOORS, state.encounter)}
             </div>
           </div>
           <button
-            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-amber-700/70 text-amber-900 hover:bg-amber-100 cursor-pointer transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-pink-400/70 text-pink-900 hover:bg-pink-100 cursor-pointer transition-colors"
             onClick={onClose}
             aria-label="Close"
             title="Close"
