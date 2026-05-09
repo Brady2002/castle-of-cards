@@ -490,8 +490,8 @@ export default function Game() {
         <RewardModal state={state} dispatch={dispatch} />
       )}
 
-      {/* Debug: instakill all enemies */}
-      <button
+      {/* Debug: instakill all enemies — disabled */}
+      {/* <button
         className="debug-button fixed top-3 left-3 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer"
         onClick={() => dispatch({ type: 'debug_kill_all' })}
         title="Debug: instakill all enemies"
@@ -522,7 +522,7 @@ export default function Game() {
       >
         <span aria-hidden>☠</span>
         <span>KILL ALL</span>
-      </button>
+      </button> */}
     </div>
   )
 }
