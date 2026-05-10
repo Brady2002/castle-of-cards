@@ -29,6 +29,8 @@ export default function StartScreen({ dispatch }: Props) {
         <p className="start-pitch">
           Fend off the creatures of the rising tide, gather sand dollars,
           and shape your fortress before The Tide King reclaims the shore.
+
+          *NOTE* On smaller screens like laptops, I recommend zooming out to around 80% so you can view your whole hand at once.
         </p>
 
         <div className="start-howto">
